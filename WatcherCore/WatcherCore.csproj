@@ -4,10 +4,18 @@
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>disable</Nullable>
+        <SignAssembly>true</SignAssembly>
+        <AssemblyOriginatorKeyFile>..\TModWatcher\TrifingZW.snk</AssemblyOriginatorKeyFile>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.11.0"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Include="..\TModWatcher\TrifingZW.snk">
+        <Link>TrifingZW.snk</Link>
+      </None>
     </ItemGroup>
 
 </Project>

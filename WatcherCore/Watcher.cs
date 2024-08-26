@@ -151,11 +151,16 @@ public class Watcher(string filePath, bool snakeCase, bool generateExtension)
         if (e.ChangeType == WatcherChangeTypes.Changed)
         {
             if (!e.FullPath.EndsWith(".fx")) return;
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.Write("\n[着色器代码更改] ");
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.Write(relativePath);
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine($"[着色器代码更改] {relativePath} AT {DateTime.Now}");
+            Console.WriteLine($" AT {DateTime.Now}");
             Console.WriteLine("开始重新编译着色器");
             //编译着色器
             CompileFx(e.FullPath);
+            Console.WriteLine();
             return;
         }
 
