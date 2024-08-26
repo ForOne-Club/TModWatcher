@@ -22,7 +22,7 @@ public class Program
         WorkPath = arguments.TryGetValue("SlnPath", out var path) ? path : AppDomain.CurrentDomain.BaseDirectory.TrimEnd('\\');
 
 #if DEBUG
-        WorkPath = @"C:\Users\TrifingZW\Documents\My Games\Terraria\tModLoader\ModSources\MoreVoodooDolls";
+        WorkPath = @"C:\Users\TrifingZW\Documents\My Games\Terraria\tModLoader\ModSources\TerrariaModFolder-main";
 #endif
 
         if (arguments.TryGetValue("snake_case", out var snakeCase))
@@ -41,7 +41,14 @@ public class Program
         if (HasCsprojOrSlnFile(WorkPath))
         {
             Watcher watcher = new(WorkPath, SnakeCase, GenerateExtension);
-            Task.Run(watcher.Start);
+            Task task = Task.Run(watcher.Start);
+
+            task.ContinueWith(t =>
+            {
+                if (!t.IsFaulted) return;
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine(t.Exception);
+            }, TaskContinuationOptions.OnlyOnFaulted);
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine("监听程序启动成功！");
             Console.WriteLine($"正在监听项目:{WorkPath}");

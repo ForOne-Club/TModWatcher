@@ -61,11 +61,12 @@ public class Watcher(string filePath, bool snakeCase, bool generateExtension)
         Code.Append("[SuppressMessage(\"ReSharper\", \"InconsistentNaming\")]\n");
         Code.Append(new GenerateCode(_root, AssemblyName, snakeCase, generateExtension).Generate());
         var folderPath = Path.Combine(FilePath, "Resource");
-        Directory.Delete(folderPath, true);
+        if (Directory.Exists(folderPath))
+            Directory.Delete(folderPath, true);
         Directory.CreateDirectory(folderPath);
         FileStream fileStream = File.Create(Path.Combine(folderPath, "R.cs"));
         using StreamWriter writer = new(fileStream);
-        writer.Write(Code);
+        writer.Write(Code); 
     }
 
     private void LoadTree(string path, TreeItem treeItem)
