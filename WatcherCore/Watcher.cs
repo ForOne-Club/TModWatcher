@@ -33,7 +33,9 @@ public class Watcher(string filePath, bool snakeCase, bool generateExtension)
         };
         AssemblyName = _root.FileName;
 
+        Console.WriteLine("\n开始进行编译着色器");
         CompileShader(FilePath);
+        Console.WriteLine("全部着色器编译完毕\n");
         LoadTree(FilePath, _root);
         GenerateCode();
 
@@ -96,7 +98,7 @@ public class Watcher(string filePath, bool snakeCase, bool generateExtension)
     private void CompileFx(string path)
     {
         // 创建一个新的进程启动信息
-        ProcessStartInfo psi = new()
+        ProcessStartInfo processStartInfo = new()
         {
             FileName = ShaderCompile, // 替换为你要调用的外部工具路径
             Arguments = $"\"{path}\"", // 替换为要传入的参数
@@ -105,9 +107,18 @@ public class Watcher(string filePath, bool snakeCase, bool generateExtension)
         // 启动进程
         Console.ForegroundColor = ConsoleColor.Green;
         Console.WriteLine($"编译着色器:{Path.GetRelativePath(FilePath, path)}");
-        using Process process = Process.Start(psi);
+    
+        using Process process = Process.Start(processStartInfo);
+        if (process == null)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("无法启动进程！");
+            return;
+        }
+    
+        // 等待进程完成
+        process.WaitForExit();
         Console.WriteLine($"编译完成");
-        process?.WaitForExit();
     }
 
     #region Callback
@@ -117,11 +128,6 @@ public class Watcher(string filePath, bool snakeCase, bool generateExtension)
 
     private void FileSystemWatcherOnCreated(object sender, FileSystemEventArgs e)
     {
-        if (IgnoreFolders
-            .Select(ignoreFolder => Path.Combine(FilePath, ignoreFolder))
-            .Any(folderToIgnore => e.FullPath.StartsWith(folderToIgnore, StringComparison.OrdinalIgnoreCase)))
-            return;
-
         var eventInfo = $"{e.Name} {e.FullPath} {e.ChangeType}";
 
         if (eventInfo == _lastEventInfo && (DateTime.Now - _lastEventTime).TotalMilliseconds < 500)
@@ -130,10 +136,19 @@ public class Watcher(string filePath, bool snakeCase, bool generateExtension)
         _lastEventTime = DateTime.Now;
         _lastEventInfo = eventInfo;
 
+        //忽略文件夹
+        if (IgnoreFolders
+            .Select(ignoreFolder => Path.Combine(FilePath, ignoreFolder))
+            .Any(folderToIgnore => e.FullPath.StartsWith(folderToIgnore, StringComparison.OrdinalIgnoreCase)))
+            return;
+
         //编译着色器
         if (e.FullPath.EndsWith(".fx"))
             CompileFx(e.FullPath);
 
+        //忽略文件类型
+        if (!FileTypes.Contains(Path.GetExtension(e.FullPath))) return;
+        
         //重新监测并生成代码
         _root.CleanChild();
         LoadTree(FilePath, _root);
