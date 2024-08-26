@@ -106,8 +106,8 @@ public class Watcher(string filePath, bool snakeCase, bool generateExtension)
         };
 
         // 启动进程
-        Console.ForegroundColor = ConsoleColor.Green;
-        Console.WriteLine("编译着色器 : ");
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.Write("编译着色器 : ");
         Console.ForegroundColor = ConsoleColor.Magenta;
         Console.Write(Path.GetRelativePath(FilePath, path));
 
@@ -122,7 +122,7 @@ public class Watcher(string filePath, bool snakeCase, bool generateExtension)
         // 等待进程完成
         process.WaitForExit();
         Console.ForegroundColor = ConsoleColor.Green;
-        Console.WriteLine($"编译完成");
+        Console.WriteLine(" 编译完成");
     }
 
     #region Callback
@@ -176,25 +176,25 @@ public class Watcher(string filePath, bool snakeCase, bool generateExtension)
         {
             case WatcherChangeTypes.Created:
                 Console.ForegroundColor = ConsoleColor.White;
-                Console.WriteLine("[文件创建] ");
+                Console.Write("[文件创建] ");
                 Console.ForegroundColor = ConsoleColor.Cyan;
-                Console.WriteLine(relativePath);
+                Console.Write(relativePath);
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine($" AT {DateTime.Now}");
                 break;
             case WatcherChangeTypes.Deleted:
                 Console.ForegroundColor = ConsoleColor.White;
-                Console.WriteLine("[文件删除] ");
+                Console.Write("[文件删除] ");
                 Console.ForegroundColor = ConsoleColor.Cyan;
-                Console.WriteLine(relativePath);
+                Console.Write(relativePath);
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine($" AT {DateTime.Now}");
                 break;
             case WatcherChangeTypes.Renamed:
                 Console.ForegroundColor = ConsoleColor.White;
-                Console.WriteLine("[文件重复名] ");
+                Console.Write("[文件重复名] ");
                 Console.ForegroundColor = ConsoleColor.Cyan;
-                Console.WriteLine(relativePath);
+                Console.Write(relativePath);
                 Console.ForegroundColor = ConsoleColor.Magenta;
                 Console.WriteLine($" AT {DateTime.Now}");
                 break;
@@ -202,9 +202,9 @@ public class Watcher(string filePath, bool snakeCase, bool generateExtension)
                 break;
             default:
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("[未知操作] ");
+                Console.Write("[未知操作] ");
                 Console.ForegroundColor = ConsoleColor.Cyan;
-                Console.WriteLine(relativePath);
+                Console.Write(relativePath);
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine($" AT {DateTime.Now}");
                 break;

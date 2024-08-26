@@ -21,6 +21,10 @@ public class Program
 
         WorkPath = arguments.TryGetValue("SlnPath", out var path) ? path : AppDomain.CurrentDomain.BaseDirectory.TrimEnd('\\');
 
+#if DEBUG
+        WorkPath = @"C:\Users\TrifingZW\Documents\My Games\Terraria\tModLoader\ModSources\MoreVoodooDolls";
+#endif
+
         if (arguments.TryGetValue("snake_case", out var snakeCase))
             SnakeCase = snakeCase == "true";
 
