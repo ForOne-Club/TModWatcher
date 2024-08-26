@@ -116,6 +116,7 @@ public class Watcher(string filePath, bool snakeCase)
     private void GenerateCode()
     {
         Code.Clear();
+        Code.Append("using System.Diagnostics.CodeAnalysis;\n\n\n");
         Code.Append($"namespace {_root.FileName}.Resource;\n\n");
         Code.Append("[SuppressMessage(\"ReSharper\", \"InconsistentNaming\")]\n");
         Code.Append(new GenerateCode(_root, AssemblyName, snakeCase).Generate());
