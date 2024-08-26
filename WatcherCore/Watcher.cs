@@ -153,6 +153,7 @@ public class Watcher(string filePath, bool snakeCase, bool generateExtension)
             //编译着色器
             if (e.FullPath.EndsWith(".fx"))
                 CompileFx(e.FullPath);
+            return;
         }
 
         //编译着色器
