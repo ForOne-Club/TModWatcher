@@ -4,7 +4,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace WatcherCore;
 
-public class GenerateCode(TreeItem treeItem, string assemblyName, bool snakeCase)
+public class GenerateCode(TreeItem treeItem, string assemblyName, bool snakeCase = true, bool generateExtension = true)
 {
     public string Generate()
     {
@@ -37,14 +37,19 @@ public class GenerateCode(TreeItem treeItem, string assemblyName, bool snakeCase
         }
         else
         {
-            // 创建静态字段声明
+            var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(parentItem.RelativePath);
+            // 拼接目录路径和去掉扩展名的文件名
+            var directoryPath = Path.GetDirectoryName(parentItem.RelativePath);
+            if (directoryPath == null || fileNameWithoutExtension == null) return;
+            var resultPath = Path.Combine(directoryPath, fileNameWithoutExtension);
+
             // 指定 string 类型
             PredefinedTypeSyntax type = SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.StringKeyword));
             // 指定变量名称并设置初始值
             VariableDeclaratorSyntax variableDeclarator = SyntaxFactory
-                .VariableDeclarator(SyntaxFactory.Identifier(FileHelper.GetCSharpFieldName(parentItem.FilePath, snakeCase)))
+                .VariableDeclarator(SyntaxFactory.Identifier(GetCSharpFieldName(parentItem.FilePath)))
                 .WithInitializer(SyntaxFactory.EqualsValueClause(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression,
-                    SyntaxFactory.Literal($"{assemblyName}/{parentItem.RelativePath.Replace("\\", "/")}"))));
+                    SyntaxFactory.Literal($"{assemblyName}/{resultPath.Replace("\\", "/")}"))));
             // 创建 VariableDeclarationSyntax
             VariableDeclarationSyntax variableDeclaration = SyntaxFactory.VariableDeclaration(type)
                 .WithVariables(SyntaxFactory.SingletonSeparatedList(variableDeclarator));
@@ -56,5 +61,63 @@ public class GenerateCode(TreeItem treeItem, string assemblyName, bool snakeCase
             //更新
             parent = parent.AddMembers(fieldDeclaration);
         }
+    }
+
+    private string GetCSharpFieldName(string path)
+    {
+        // 获取文件名和扩展名
+        var fileName = Path.GetFileNameWithoutExtension(path);
+        var extension = Path.GetExtension(path);
+
+        // 处理文件名和扩展名
+        var processedFileName = CapitalizeFirstLetter(fileName);
+        var processedExtension = CapitalizeFirstLetter(extension.Replace(".", ""));
+
+        // 合并文件名和扩展名
+        var result = processedFileName;
+        if (generateExtension)
+        {
+            if (snakeCase)
+                result += "_";
+            result += processedExtension;
+        }
+
+        // 处理 C# 关键字冲突 (添加前缀)
+        if (IsCSharpKeyword(result))
+            result = "_" + result;
+
+        // 如果第一个字符是数字，则添加下划线
+        if (char.IsDigit(result, 0))
+            result = "_" + result;
+
+        return result;
+    }
+
+    private static string CapitalizeFirstLetter(string text)
+    {
+        if (string.IsNullOrEmpty(text))
+            return text;
+
+        var firstChar = text[0];
+
+        if (char.IsLetter(firstChar))
+            return char.ToUpper(firstChar) + text[1..];
+
+        return text;
+    }
+
+    // 检查字符串是否为 C# 关键字
+    private static bool IsCSharpKeyword(string text)
+    {
+        string[] keywords =
+        [
+            "abstract", "as", "base", "bool", "break", "byte", "case", "catch", "char", "checked", "class", "const", "continue", "decimal",
+            "default", "delegate", "do", "double", "else", "enum", "event", "explicit", "extern", "false", "finally", "fixed", "float", "for",
+            "foreach", "goto", "if", "implicit", "in", "int", "interface", "internal", "is", "lock", "long", "namespace", "new", "null",
+            "object", "operator", "out", "override", "params", "private", "protected", "public", "readonly", "ref", "return", "sbyte", "sealed",
+            "short", "sizeof", "stackalloc", "static", "string", "struct", "switch", "this", "throw", "true", "try", "typeof", "uint", "ulong",
+            "unchecked", "unsafe", "ushort", "using", "virtual", "void", "volatile", "while"
+        ];
+        return keywords.Contains(text);
     }
 }

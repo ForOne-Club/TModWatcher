@@ -1,12 +1,10 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using System.Drawing;
-using System.Reflection;
 using System.Text;
 
 namespace WatcherCore;
 
 [SuppressMessage("ReSharper", "BitwiseOperatorOnEnumWithoutFlags")]
-public class Watcher(string filePath, bool snakeCase)
+public class Watcher(string filePath, bool snakeCase, bool generateExtension)
 {
     public readonly List<string> FileTypes =
         [".png", ".jpg", ".webp", ".bmp", ".gif", ".mp3", ".wav", ".ogg", ".flac", ".xnb", ".json"];
@@ -14,11 +12,11 @@ public class Watcher(string filePath, bool snakeCase)
     public readonly List<string> IgnoreFolders =
         [".git", "bin", "obj", ".idea", "Properties", "Localization", "Resource"];
 
-    public string FilePath { get; } = filePath;
-    public string AssemblyName { get; private set; }
-
     private FileSystemWatcher _fileSystemWatcher;
     private TreeItem _root;
+
+    public string FilePath { get; } = filePath;
+    public string AssemblyName { get; private set; }
 
     public StringBuilder Code { get; } = new();
 
@@ -42,6 +40,43 @@ public class Watcher(string filePath, bool snakeCase)
         _fileSystemWatcher.Error += FileSystemWatcherOnError;
         _fileSystemWatcher.IncludeSubdirectories = true;
         _fileSystemWatcher.EnableRaisingEvents = true;
+    }
+
+    public void Stop()
+    {
+    }
+
+    private void GenerateCode()
+    {
+        Code.Clear();
+        Code.Append("using System.Diagnostics.CodeAnalysis;\n\n\n");
+        Code.Append($"namespace {_root.FileName}.Resource;\n\n");
+        Code.Append("[SuppressMessage(\"ReSharper\", \"InconsistentNaming\")]\n");
+        Code.Append(new GenerateCode(_root, AssemblyName, snakeCase, generateExtension).Generate());
+        var folderPath = Path.Combine(FilePath, "Resource");
+        Directory.Delete(folderPath, true);
+        Directory.CreateDirectory(folderPath);
+        FileStream fileStream = File.Create(Path.Combine(folderPath, "R.cs"));
+        using StreamWriter writer = new(fileStream);
+        writer.Write(Code);
+    }
+
+    private void LoadTree(string path, TreeItem treeItem)
+    {
+        foreach (var file in Directory.GetFiles(path))
+        {
+            if (!FileTypes.Contains(Path.GetExtension(file))) continue;
+            var relativePath = Path.GetRelativePath(FilePath, file);
+            treeItem.CreateChild(Path.GetFileNameWithoutExtension(file), file, relativePath, false);
+        }
+
+        foreach (var directory in Directory.GetDirectories(path))
+        {
+            var relativePath = Path.GetRelativePath(FilePath, directory);
+            if (IgnoreFolders.Contains(relativePath)) continue;
+            TreeItem dirTreeItem = treeItem.CreateChild(Path.GetFileName(directory), directory, relativePath);
+            LoadTree(directory, dirTreeItem);
+        }
     }
 
     #region Callback
@@ -108,41 +143,4 @@ public class Watcher(string filePath, bool snakeCase)
     }
 
     #endregion
-
-    public void Stop()
-    {
-    }
-
-    private void GenerateCode()
-    {
-        Code.Clear();
-        Code.Append("using System.Diagnostics.CodeAnalysis;\n\n\n");
-        Code.Append($"namespace {_root.FileName}.Resource;\n\n");
-        Code.Append("[SuppressMessage(\"ReSharper\", \"InconsistentNaming\")]\n");
-        Code.Append(new GenerateCode(_root, AssemblyName, snakeCase).Generate());
-        var folderPath = Path.Combine(FilePath, "Resource");
-        Directory.Delete(folderPath, true);
-        Directory.CreateDirectory(folderPath);
-        FileStream fileStream = File.Create(Path.Combine(folderPath, "R.cs"));
-        using StreamWriter writer = new(fileStream);
-        writer.Write(Code);
-    }
-
-    private void LoadTree(string path, TreeItem treeItem)
-    {
-        foreach (var file in Directory.GetFiles(path))
-        {
-            if (!FileTypes.Contains(Path.GetExtension(file))) continue;
-            var relativePath = Path.GetRelativePath(FilePath, file);
-            treeItem.CreateChild(Path.GetFileNameWithoutExtension(file), file, relativePath, false);
-        }
-
-        foreach (var directory in Directory.GetDirectories(path))
-        {
-            var relativePath = Path.GetRelativePath(FilePath, directory);
-            if (IgnoreFolders.Contains(relativePath)) continue;
-            TreeItem dirTreeItem = treeItem.CreateChild(Path.GetFileName(directory), directory, relativePath);
-            LoadTree(directory, dirTreeItem);
-        }
-    }
 }

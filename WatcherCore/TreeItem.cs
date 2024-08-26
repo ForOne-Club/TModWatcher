@@ -8,6 +8,7 @@ public class TreeItem
     public string FilePath { get; init; }
     public string RelativePath { get; init; }
     public bool Directory { get; init; }
+    public int ChildCount => TreeItems.Count;
 
     public TreeItem CreateChild(string name, string path, string relativePath, bool directory = true)
     {
@@ -22,10 +23,20 @@ public class TreeItem
         return treeItem;
     }
 
-    public void RemoveChild(TreeItem treeItem) => TreeItems.Remove(treeItem);
-    public void RemoveChild(int index) => TreeItems.RemoveAt(index);
-    public void CleanChild() => TreeItems.Clear();
-    public int ChildCount => TreeItems.Count;
+    public void RemoveChild(TreeItem treeItem)
+    {
+        TreeItems.Remove(treeItem);
+    }
+
+    public void RemoveChild(int index)
+    {
+        TreeItems.RemoveAt(index);
+    }
+
+    public void CleanChild()
+    {
+        TreeItems.Clear();
+    }
 
     public bool HasFile()
     {

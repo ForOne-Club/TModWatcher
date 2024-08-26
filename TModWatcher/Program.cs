@@ -6,6 +6,7 @@ public class Program
 {
     public static string WorkPath { get; private set; }
     public static bool SnakeCase { get; private set; } = true;
+    public static bool GenerateExtension { get; private set; } = true;
 
     public static void Main(string[] args)
     {
@@ -27,6 +28,9 @@ public class Program
         if (arguments.TryGetValue("snake_case", out var snakeCase))
             SnakeCase = snakeCase == "true";
 
+        if (arguments.TryGetValue("GenerateExtension", out var generateExtension))
+            GenerateExtension = generateExtension == "true";
+
         PrintTModWatcherWelcome();
         Console.ForegroundColor = ConsoleColor.Green;
         Console.WriteLine("\n输入指令Exit退出程序");
@@ -36,7 +40,7 @@ public class Program
 
         if (HasCsprojOrSlnFile(WorkPath))
         {
-            Watcher watcher = new(WorkPath, SnakeCase);
+            Watcher watcher = new(WorkPath, SnakeCase, GenerateExtension);
             Task.Run(watcher.Start);
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine("监听程序启动成功！");
