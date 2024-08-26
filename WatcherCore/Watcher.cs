@@ -43,6 +43,12 @@ public class Watcher(string filePath, bool snakeCase, bool generateExtension)
         _fileSystemWatcher.Created += FileSystemWatcherOnCreated;
         _fileSystemWatcher.Deleted += FileSystemWatcherOnCreated;
         _fileSystemWatcher.Renamed += FileSystemWatcherOnCreated;
+        _fileSystemWatcher.Changed += (_, e) =>
+        {
+            //编译着色器
+            if (e.FullPath.EndsWith(".fx"))
+                CompileFx(e.FullPath);
+        };
         _fileSystemWatcher.Error += FileSystemWatcherOnError;
         _fileSystemWatcher.IncludeSubdirectories = true;
         _fileSystemWatcher.EnableRaisingEvents = true;
@@ -107,7 +113,7 @@ public class Watcher(string filePath, bool snakeCase, bool generateExtension)
         // 启动进程
         Console.ForegroundColor = ConsoleColor.Green;
         Console.WriteLine($"编译着色器:{Path.GetRelativePath(FilePath, path)}");
-    
+
         using Process process = Process.Start(processStartInfo);
         if (process == null)
         {
@@ -115,7 +121,7 @@ public class Watcher(string filePath, bool snakeCase, bool generateExtension)
             Console.WriteLine("无法启动进程！");
             return;
         }
-    
+
         // 等待进程完成
         process.WaitForExit();
         Console.WriteLine($"编译完成");
@@ -148,7 +154,7 @@ public class Watcher(string filePath, bool snakeCase, bool generateExtension)
 
         //忽略文件类型
         if (!FileTypes.Contains(Path.GetExtension(e.FullPath))) return;
-        
+
         //重新监测并生成代码
         _root.CleanChild();
         LoadTree(FilePath, _root);
