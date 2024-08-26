@@ -17,6 +17,7 @@
 资源引用，并且在项目更改时自动编译着色器文件。此工具适用于 Windows 操作系统，不需要安装任何额外工具即可使用，极大简化了模组开发流程。
 
 ![演示图片](DemoImages/WindowScreenshot.png)
+![演示图片](DemoImages/CodeScreens.png)
 
 ## 功能特点
 
