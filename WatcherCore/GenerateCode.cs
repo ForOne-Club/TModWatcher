@@ -18,7 +18,7 @@ public class GenerateCode(TreeItem treeItem, string assemblyName, bool snakeCase
     }
 
     private void GenerateClass(ref ClassDeclarationSyntax parent, TreeItem parentItem)
-    {
+    {   
         if (parentItem.Directory)
         {
             if (!parentItem.HasFile()) return;
@@ -56,7 +56,8 @@ public class GenerateCode(TreeItem treeItem, string assemblyName, bool snakeCase
             // 创建 FieldDeclarationSyntax
             FieldDeclarationSyntax fieldDeclaration = SyntaxFactory.FieldDeclaration(variableDeclaration).AddModifiers(
                 SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                SyntaxFactory.Token(SyntaxKind.StaticKeyword));
+                SyntaxFactory.Token(SyntaxKind.StaticKeyword),
+                SyntaxFactory.Token(SyntaxKind.ReadOnlyKeyword));
 
             //更新
             parent = parent.AddMembers(fieldDeclaration);

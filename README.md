@@ -16,6 +16,8 @@
 **TModWatcher** 是一个为 Terraria 模组开发者设计的自动化工具。它通过监控 TModLoader 项目解决方案，自动生成 C#
 资源引用，并且在项目更改时自动编译着色器文件。此工具适用于 Windows 操作系统，不需要安装任何额外工具即可使用，极大简化了模组开发流程。
 
+![演示图片](DemoImages/WindowScreenshot.png)
+
 ## 功能特点
 
 - **自动生成 C# 资源引用**：根据项目中的资源文件，自动生成相应的 C# 代码引用，避免手动操作的繁琐。
@@ -51,8 +53,8 @@ TModWatcher SlnPath="C:\Projects\MyTerrariaMod" snake_case=true GenerateExtensio
 
 **TModWatcher** 隶属于 [万物一心](https://github.com/ForOne-Club) 团队，这是一个致力于 Terraria 模组开发的团队。
 
-<div style="text-align: center;">
-  <img src="https://avatars.githubusercontent.com/u/179108262?s=200&v=4" alt="万物一心">
+<div align="center">
+   <img src="https://avatars.githubusercontent.com/u/179108262?s=200&v=4" alt="万物一心">
 </div>
 
 如果你有任何问题，欢迎加入我们的 **QQ群**：574904188 或者联系开发者 **QQ**：3077446541。
