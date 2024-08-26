@@ -1,0 +1,34 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net8.0</TargetFramework>
+        <!-- 启用本机编译 -->
+        <PublishAOT>true</PublishAOT>
+        <!-- 去除调试信息 -->
+        <StripSymbols>true</StripSymbols>
+        <!-- 运行速度档编译 -->
+        <OptimizationPreference>Speed</OptimizationPreference>
+        <AotMode>Speed</AotMode>
+        <!-- 不依赖于区域性特定的功能 -->
+        <InvariantGlobalization>true</InvariantGlobalization>
+        <!-- 启用LLVM优化 -->
+        <EnableLLVM>true</EnableLLVM>
+        <!-- C#12 -->
+        <LangVersion>12</LangVersion>
+        <!-- 启用隐式使用指令 -->
+        <ImplicitUsings>enable</ImplicitUsings>
+        <!-- 禁用可以为null的引用类型 -->
+        <Nullable>disable</Nullable>
+        <!-- 链路器优化 -->
+        <PublishTrimmed>true</PublishTrimmed>
+        <!-- 移除未使用程序集 -->
+        <RemoveUnusedReferences>true</RemoveUnusedReferences>
+
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\WatcherCore\WatcherCore.csproj"/>
+    </ItemGroup>
+
+</Project>
