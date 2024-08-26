@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 namespace WatcherCore;
@@ -11,6 +12,8 @@ public class Watcher(string filePath, bool snakeCase, bool generateExtension)
 
     public readonly List<string> IgnoreFolders =
         [".git", "bin", "obj", ".idea", "Properties", "Localization", "Resource"];
+
+    public static readonly string ShaderCompile = "ShaderCompile/ShaderCompile.exe";
 
     private FileSystemWatcher _fileSystemWatcher;
     private TreeItem _root;
@@ -30,6 +33,7 @@ public class Watcher(string filePath, bool snakeCase, bool generateExtension)
         };
         AssemblyName = _root.FileName;
 
+        CompileShader(FilePath);
         LoadTree(FilePath, _root);
         GenerateCode();
 
@@ -79,6 +83,32 @@ public class Watcher(string filePath, bool snakeCase, bool generateExtension)
         }
     }
 
+    private static void CompileShader(string path)
+    {
+        foreach (var file in Directory.GetFiles(path))
+            if (Path.GetExtension(file) == ".fx")
+                CompileFx(file);
+
+        foreach (var directory in Directory.GetDirectories(path))
+            CompileShader(directory);
+    }
+
+    private static void CompileFx(string path)
+    {
+        // 创建一个新的进程启动信息
+        ProcessStartInfo psi = new()
+        {
+            FileName = ShaderCompile, // 替换为你要调用的外部工具路径
+            Arguments = $"\"{path}\"", // 替换为要传入的参数
+        };
+
+        // 启动进程
+        using Process process = Process.Start(psi);
+        Console.WriteLine(path);
+        Console.WriteLine(process);
+        process?.WaitForExit();
+    }
+
     #region Callback
 
     private static DateTime _lastEventTime;
@@ -98,6 +128,10 @@ public class Watcher(string filePath, bool snakeCase, bool generateExtension)
 
         _lastEventTime = DateTime.Now;
         _lastEventInfo = eventInfo;
+
+        //编译着色器
+        if (e.FullPath.EndsWith(".fx"))
+            CompileFx(e.FullPath);
 
         //重新监测并生成代码
         _root.CleanChild();
