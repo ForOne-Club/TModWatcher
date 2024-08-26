@@ -107,7 +107,7 @@ public class Watcher(string filePath, bool snakeCase, bool generateExtension)
 
         // 启动进程
         Console.ForegroundColor = ConsoleColor.Yellow;
-        Console.Write("编译着色器 : ");
+        Console.Write("[编译着色器]  ");
         Console.ForegroundColor = ConsoleColor.Magenta;
         Console.Write(Path.GetRelativePath(FilePath, path));
 
@@ -122,7 +122,7 @@ public class Watcher(string filePath, bool snakeCase, bool generateExtension)
         // 等待进程完成
         process.WaitForExit();
         Console.ForegroundColor = ConsoleColor.Green;
-        Console.WriteLine(" 编译完成");
+        Console.WriteLine("  ---编译完成");
     }
 
     #region Callback
@@ -151,13 +151,14 @@ public class Watcher(string filePath, bool snakeCase, bool generateExtension)
         if (e.ChangeType == WatcherChangeTypes.Changed)
         {
             if (!e.FullPath.EndsWith(".fx")) return;
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.Write("\n[着色器代码更改] ");
+            Console.ForegroundColor = ConsoleColor.Blue;
+            Console.Write("\n[着色器代码更改]  ");
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.Write(relativePath);
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine($"  {DateTime.Now}");
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine($" AT {DateTime.Now}");
-            Console.WriteLine("开始重新编译着色器");
+            Console.WriteLine("开始重新编译着色器......");
             //编译着色器
             CompileFx(e.FullPath);
             Console.WriteLine();
@@ -180,38 +181,38 @@ public class Watcher(string filePath, bool snakeCase, bool generateExtension)
         switch (e.ChangeType)
         {
             case WatcherChangeTypes.Created:
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.Write("[文件创建] ");
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.Write("[文件创建]  ");
                 Console.ForegroundColor = ConsoleColor.Cyan;
                 Console.Write(relativePath);
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine($" AT {DateTime.Now}");
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine($"  {DateTime.Now}");
                 break;
             case WatcherChangeTypes.Deleted:
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.Write("[文件删除] ");
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.Write("[文件删除]  ");
                 Console.ForegroundColor = ConsoleColor.Cyan;
                 Console.Write(relativePath);
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($" AT {DateTime.Now}");
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine($"  {DateTime.Now}");
                 break;
             case WatcherChangeTypes.Renamed:
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.Write("[文件重复名] ");
+                Console.ForegroundColor = ConsoleColor.Blue;
+                Console.Write("[文件重复名]  ");
                 Console.ForegroundColor = ConsoleColor.Cyan;
                 Console.Write(relativePath);
-                Console.ForegroundColor = ConsoleColor.Magenta;
-                Console.WriteLine($" AT {DateTime.Now}");
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine($"  {DateTime.Now}");
                 break;
             case WatcherChangeTypes.All:
                 break;
             default:
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.Write("[未知操作] ");
+                Console.Write("[未知操作]  ");
                 Console.ForegroundColor = ConsoleColor.Cyan;
                 Console.Write(relativePath);
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($" AT {DateTime.Now}");
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine($"  {DateTime.Now}");
                 break;
         }
     }
