@@ -1,5 +1,13 @@
 # TModWatcher
 
+<div>
+	<img src="https://img.shields.io/github/languages/top/TrifingZW/TModWatcher?color=green" alt="languages-top" />
+    <img alt="license" src="https://img.shields.io/github/license/TrifingZW/TModWatcher"/>
+    <img alt="commit" src="https://img.shields.io/github/commit-activity/m/TrifingZW/TModWatcher?color=%23ff69b4"/>
+    <img alt="stars" src="https://img.shields.io/github/stars/TrifingZW/TModWatcher?style=social">
+</div>
+
+
 欢迎使用 **TModWatcher**！这款工具由 TrifingZW 开发，旨在帮助你自动生成资源的 C# 引用并编译着色器文件，让你的 Terraria
 模组开发更加轻松！
 
@@ -42,7 +50,10 @@ TModWatcher SlnPath="C:\Projects\MyTerrariaMod" snake_case=true GenerateExtensio
 ## 项目地址与支持
 
 **TModWatcher** 隶属于 [万物一心](https://github.com/ForOne-Club) 团队，这是一个致力于 Terraria 模组开发的团队。
-![万物一心](https://avatars.githubusercontent.com/u/179108262?s=200&v=4)
+
+<div style="text-align: center;">
+  <img src="https://avatars.githubusercontent.com/u/179108262?s=200&v=4" alt="万物一心">
+</div>
 
 如果你有任何问题，欢迎加入我们的 **QQ群**：574904188 或者联系开发者 **QQ**：3077446541。
 
