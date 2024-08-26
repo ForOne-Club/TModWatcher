@@ -33,7 +33,7 @@ public class Watcher(string filePath, bool snakeCase, bool generateExtension)
         };
         AssemblyName = _root.FileName;
 
-        Console.WriteLine("\n开始进行编译着色器");
+        Console.WriteLine("\n开始进行编译着色器......");
         CompileShader(FilePath);
         Console.WriteLine("全部着色器编译完毕\n");
         LoadTree(FilePath, _root);
@@ -45,6 +45,10 @@ public class Watcher(string filePath, bool snakeCase, bool generateExtension)
         _fileSystemWatcher.Renamed += FileSystemWatcherOnCreated;
         _fileSystemWatcher.Changed += (_, e) =>
         {
+            var relativePath = Path.GetRelativePath(FilePath, e.FullPath);
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"[着色器代码更改] {relativePath} AT {DateTime.Now}");
+            Console.WriteLine("开始重新编译着色器");
             //编译着色器
             if (e.FullPath.EndsWith(".fx"))
                 CompileFx(e.FullPath);
@@ -172,10 +176,6 @@ public class Watcher(string filePath, bool snakeCase, bool generateExtension)
             case WatcherChangeTypes.Deleted:
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine($"[文件删除] {relativePath} AT {DateTime.Now}");
-                break;
-            case WatcherChangeTypes.Changed:
-                Console.ForegroundColor = ConsoleColor.Cyan;
-                Console.WriteLine($"[文件改变] {relativePath} AT {DateTime.Now}");
                 break;
             case WatcherChangeTypes.Renamed:
                 Console.ForegroundColor = ConsoleColor.Cyan;
