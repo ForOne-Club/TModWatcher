@@ -40,19 +40,10 @@ public class Watcher(string filePath, bool snakeCase, bool generateExtension)
         GenerateCode();
 
         if (FilePath != null) _fileSystemWatcher = new(FilePath);
-        _fileSystemWatcher.Created += FileSystemWatcherOnCreated;
-        _fileSystemWatcher.Deleted += FileSystemWatcherOnCreated;
-        _fileSystemWatcher.Renamed += FileSystemWatcherOnCreated;
-        _fileSystemWatcher.Changed += (_, e) =>
-        {
-            var relativePath = Path.GetRelativePath(FilePath, e.FullPath);
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine($"[着色器代码更改] {relativePath} AT {DateTime.Now}");
-            Console.WriteLine("开始重新编译着色器");
-            //编译着色器
-            if (e.FullPath.EndsWith(".fx"))
-                CompileFx(e.FullPath);
-        };
+        _fileSystemWatcher.Created += FileSystemWatcher;
+        _fileSystemWatcher.Deleted += FileSystemWatcher;
+        _fileSystemWatcher.Renamed += FileSystemWatcher;
+        _fileSystemWatcher.Changed += FileSystemWatcher;
         _fileSystemWatcher.Error += FileSystemWatcherOnError;
         _fileSystemWatcher.IncludeSubdirectories = true;
         _fileSystemWatcher.EnableRaisingEvents = true;
@@ -136,7 +127,7 @@ public class Watcher(string filePath, bool snakeCase, bool generateExtension)
     private static DateTime _lastEventTime;
     private static string _lastEventInfo;
 
-    private void FileSystemWatcherOnCreated(object sender, FileSystemEventArgs e)
+    private void FileSystemWatcher(object sender, FileSystemEventArgs e)
     {
         var eventInfo = $"{e.Name} {e.FullPath} {e.ChangeType}";
 
@@ -152,6 +143,18 @@ public class Watcher(string filePath, bool snakeCase, bool generateExtension)
             .Any(folderToIgnore => e.FullPath.StartsWith(folderToIgnore, StringComparison.OrdinalIgnoreCase)))
             return;
 
+        var relativePath = Path.GetRelativePath(FilePath, e.FullPath);
+
+        if (e.ChangeType == WatcherChangeTypes.Changed)
+        {
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"[着色器代码更改] {relativePath} AT {DateTime.Now}");
+            Console.WriteLine("开始重新编译着色器");
+            //编译着色器
+            if (e.FullPath.EndsWith(".fx"))
+                CompileFx(e.FullPath);
+        }
+
         //编译着色器
         if (e.FullPath.EndsWith(".fx"))
             CompileFx(e.FullPath);
@@ -163,8 +166,6 @@ public class Watcher(string filePath, bool snakeCase, bool generateExtension)
         _root.CleanChild();
         LoadTree(FilePath, _root);
         GenerateCode();
-
-        var relativePath = Path.GetRelativePath(FilePath, e.FullPath);
 
         // 打印监测信息
         switch (e.ChangeType)
