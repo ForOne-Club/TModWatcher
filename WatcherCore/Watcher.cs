@@ -107,7 +107,9 @@ public class Watcher(string filePath, bool snakeCase, bool generateExtension)
 
         // 启动进程
         Console.ForegroundColor = ConsoleColor.Green;
-        Console.WriteLine($"编译着色器:{Path.GetRelativePath(FilePath, path)}");
+        Console.WriteLine("编译着色器 : ");
+        Console.ForegroundColor = ConsoleColor.Magenta;
+        Console.Write(Path.GetRelativePath(FilePath, path));
 
         using Process process = Process.Start(processStartInfo);
         if (process == null)
@@ -119,6 +121,7 @@ public class Watcher(string filePath, bool snakeCase, bool generateExtension)
 
         // 等待进程完成
         process.WaitForExit();
+        Console.ForegroundColor = ConsoleColor.Green;
         Console.WriteLine($"编译完成");
     }
 
@@ -147,12 +150,12 @@ public class Watcher(string filePath, bool snakeCase, bool generateExtension)
 
         if (e.ChangeType == WatcherChangeTypes.Changed)
         {
+            if (!e.FullPath.EndsWith(".fx")) return;
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine($"[着色器代码更改] {relativePath} AT {DateTime.Now}");
             Console.WriteLine("开始重新编译着色器");
             //编译着色器
-            if (e.FullPath.EndsWith(".fx"))
-                CompileFx(e.FullPath);
+            CompileFx(e.FullPath);
             return;
         }
 
@@ -172,22 +175,38 @@ public class Watcher(string filePath, bool snakeCase, bool generateExtension)
         switch (e.ChangeType)
         {
             case WatcherChangeTypes.Created:
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine("[文件创建] ");
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine(relativePath);
                 Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine($"[文件创建] {relativePath} AT {DateTime.Now}");
+                Console.WriteLine($" AT {DateTime.Now}");
                 break;
             case WatcherChangeTypes.Deleted:
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine($"[文件删除] {relativePath} AT {DateTime.Now}");
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine("[文件删除] ");
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine(relativePath);
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($" AT {DateTime.Now}");
                 break;
             case WatcherChangeTypes.Renamed:
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine("[文件重复名] ");
                 Console.ForegroundColor = ConsoleColor.Cyan;
-                Console.WriteLine($"[文件更名] {relativePath} AT {DateTime.Now}");
+                Console.WriteLine(relativePath);
+                Console.ForegroundColor = ConsoleColor.Magenta;
+                Console.WriteLine($" AT {DateTime.Now}");
                 break;
             case WatcherChangeTypes.All:
                 break;
             default:
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"[Error] 未知类型:{e}");
+                Console.WriteLine("[未知操作] ");
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine(relativePath);
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($" AT {DateTime.Now}");
                 break;
         }
     }
