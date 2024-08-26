@@ -6,7 +6,7 @@ public class TreeItem
 
     public string FileName { get; init; }
     public string FilePath { get; init; }
-    public string RelativePath { get; init; }
+    public string RelativePath { get; private init; }
     public bool Directory { get; init; }
     public int ChildCount => TreeItems.Count;
 
@@ -50,7 +50,7 @@ public class TreeItem
         return hasFile;
     }
 
-    public static void Ergodic(TreeItem treeItem, Func<TreeItem, bool> action)
+    private static void Ergodic(TreeItem treeItem, Func<TreeItem, bool> action)
     {
         foreach (TreeItem item in treeItem.TreeItems)
         {

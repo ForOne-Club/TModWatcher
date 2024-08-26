@@ -83,7 +83,7 @@ public class Watcher(string filePath, bool snakeCase, bool generateExtension)
         }
     }
 
-    private static void CompileShader(string path)
+    private void CompileShader(string path)
     {
         foreach (var file in Directory.GetFiles(path))
             if (Path.GetExtension(file) == ".fx")
@@ -93,7 +93,7 @@ public class Watcher(string filePath, bool snakeCase, bool generateExtension)
             CompileShader(directory);
     }
 
-    private static void CompileFx(string path)
+    private void CompileFx(string path)
     {
         // 创建一个新的进程启动信息
         ProcessStartInfo psi = new()
@@ -103,9 +103,10 @@ public class Watcher(string filePath, bool snakeCase, bool generateExtension)
         };
 
         // 启动进程
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.WriteLine($"编译着色器:{Path.GetRelativePath(FilePath, path)}");
         using Process process = Process.Start(psi);
-        Console.WriteLine(path);
-        Console.WriteLine(process);
+        Console.WriteLine($"编译完成");
         process?.WaitForExit();
     }
 
@@ -145,19 +146,19 @@ public class Watcher(string filePath, bool snakeCase, bool generateExtension)
         {
             case WatcherChangeTypes.Created:
                 Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine($"[Created] {relativePath} at {DateTime.Now}");
+                Console.WriteLine($"[文件创建] {relativePath} AT {DateTime.Now}");
                 break;
             case WatcherChangeTypes.Deleted:
                 Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine($"[Deleted] {relativePath} at {DateTime.Now}");
+                Console.WriteLine($"[文件删除] {relativePath} AT {DateTime.Now}");
                 break;
             case WatcherChangeTypes.Changed:
                 Console.ForegroundColor = ConsoleColor.Cyan;
-                Console.WriteLine($"[Changed] {relativePath} at {DateTime.Now}");
+                Console.WriteLine($"[文件改变] {relativePath} AT {DateTime.Now}");
                 break;
             case WatcherChangeTypes.Renamed:
                 Console.ForegroundColor = ConsoleColor.Cyan;
-                Console.WriteLine($"[Renamed] {relativePath} at {DateTime.Now}");
+                Console.WriteLine($"[文件更名] {relativePath} AT {DateTime.Now}");
                 break;
             case WatcherChangeTypes.All:
                 break;
