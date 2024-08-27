@@ -4,8 +4,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TModWatcher", "TModWatcher\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WatcherCore", "WatcherCore\WatcherCore.csproj", "{7651D197-A18F-44EB-9E46-9EAEF2151228}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShaderCompile", "ShaderCompile\ShaderCompile.csproj", "{B76CBDDD-D4A0-4FA9-BC3F-42EBE92A80E6}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -20,9 +18,5 @@ Global
 		{7651D197-A18F-44EB-9E46-9EAEF2151228}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7651D197-A18F-44EB-9E46-9EAEF2151228}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7651D197-A18F-44EB-9E46-9EAEF2151228}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B76CBDDD-D4A0-4FA9-BC3F-42EBE92A80E6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B76CBDDD-D4A0-4FA9-BC3F-42EBE92A80E6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B76CBDDD-D4A0-4FA9-BC3F-42EBE92A80E6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B76CBDDD-D4A0-4FA9-BC3F-42EBE92A80E6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
