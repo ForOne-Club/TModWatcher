@@ -138,11 +138,10 @@ public class Watcher(WatcherSettings watcherSettings)
 
     private void FileSystemWatcher(object sender, FileSystemEventArgs e)
     {
-        var eventInfo = $"{e.Name} {e.FullPath} {e.ChangeType}";
-
+        //去重
+        var eventInfo = e.FullPath;
         if (eventInfo == _lastEventInfo && (DateTime.Now - _lastEventTime).TotalMilliseconds < 500)
-            return; // 忽略短时间内的重复事件
-
+            return;
         _lastEventTime = DateTime.Now;
         _lastEventInfo = eventInfo;
 
@@ -154,34 +153,47 @@ public class Watcher(WatcherSettings watcherSettings)
 
         var relativePath = Path.GetRelativePath(WorkPath, e.FullPath);
 
-        if (e.ChangeType == WatcherChangeTypes.Changed)
-        {
-            if (!e.FullPath.EndsWith(".fx")) return;
-            Console.ForegroundColor = ConsoleColor.Blue;
-            Console.Write("\n[着色器代码更改]  ");
-            Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.Write(relativePath);
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine($"  {DateTime.Now}");
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("开始重新编译着色器......");
-            //编译着色器
-            CompileShader(e.FullPath);
-            Console.WriteLine();
-            return;
-        }
-
-        //编译着色器
+        //单独处理fx类型文件
         if (e.FullPath.EndsWith(".fx"))
-            CompileShader(e.FullPath);
+        {
+            switch (e.ChangeType)
+            {
+                case WatcherChangeTypes.Created:
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.Write("\n[着色器代码创建]  ");
+                    break;
+                case WatcherChangeTypes.Changed:
+                    Console.ForegroundColor = ConsoleColor.Blue;
+                    Console.Write("\n[着色器代码更改]  ");
+                    break;
+                case WatcherChangeTypes.Renamed:
+                    Console.ForegroundColor = ConsoleColor.Blue;
+                    Console.Write("\n[着色器代码更名]  ");
+                    break;
+            }
 
-        //忽略文件类型
-        if (!WatcherSettings.FileTypes.Contains(Path.GetExtension(e.FullPath))) return;
+            if (e.ChangeType != WatcherChangeTypes.Deleted)
+            {
+                //打印文件名称和时间
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.Write(relativePath);
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine($"  {DateTime.Now}");
+                //编译着色器
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine("开始重新编译着色器......");
+                CompileShader(e.FullPath);
+                Console.WriteLine();
+            }
+        }
 
         //重新监测并生成代码
         _root.CleanChild();
         LoadFileTree(WorkPath, _root);
         GenerateCode();
+
+        //忽略文件类型
+        if (!WatcherSettings.FileTypes.Contains(Path.GetExtension(e.FullPath))) return;
 
         // 打印监测信息
         switch (e.ChangeType)
@@ -211,6 +223,8 @@ public class Watcher(WatcherSettings watcherSettings)
                 Console.WriteLine($"  {DateTime.Now}");
                 break;
             case WatcherChangeTypes.All:
+                break;
+            case WatcherChangeTypes.Changed:
                 break;
             default:
                 Console.ForegroundColor = ConsoleColor.Red;
