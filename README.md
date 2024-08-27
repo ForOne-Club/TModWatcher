@@ -28,26 +28,32 @@
 
 ## 安装与使用
 
-**TModWatcher** 无需安装，只需下载并运行可执行文件即可使用。
+**TModWatcher** 无需安装，无需.NET运行时，只需下载并运行可执行文件即可使用。
 
 ### 基本使用方法
 
-1. **下载并解压 TModWatcher**。
-
-2. **运行命令**：
+1. **前往[Releases](https://github.com/ForOne-Club/TModWatcher/releases)下载并解压 TModWatcher**
+2. **编辑配置文件**
+    - 在解压后的文件夹中找到 `WatcherSettings.json` 文件，编辑该文件以配置工具的行为
+    - `WorkPath`：指向 Terraria 模组项目的解决方案路径
+    - `ShaderCompile`：指向 FX 着色器编译器的路径，默认为 `ShaderCompile/ShaderCompile.exe`
+    - `SnakeCase`：是否启用蛇形命名法，默认为 `true`
+    - `GenerateExtension`：是否为生成的字段名称添加后缀，默认为 `true`
+    - `ResourcePath`：生成的C#资源引用静态类路径，默认为 `Resource/R.cs`
+    - `FileTypes`：需要监控的文件类型，默认为 `[".png", ".jpg", ".webp", ".bmp", ".gif", ".mp3", ".wav", ".ogg", ".flac", ".xnb"]`
+    - `IgnorePaths`：需要忽略的文件夹路径，默认为 `[".git", ".idea", ".vs", "bin", "obj", "Properties", "Localization", "Resource"]`
+3. **运行命令**：
    ```shell
-   TModWatcher SlnPath=path [snake_case=true] [GenerateExtension=true]
+   TModWatcher SettingsPath=WatcherSettings.json
    ```
-    - `SlnPath=path`：指定要监控的解决方案路径。
-    - `snake_case=true`（可选）：启用蛇形命名法，如果需要以蛇形命名法生成 C# 字段名称，请添加此参数（该参数默认为Ture）。
-    - `GenerateExtension=true`（可选）：生成 C# 引用时，字段名称将加上特定的后缀（该参数默认为Ture）。
+    - `SettingsPath=path`：指向配置文件，默认为相对路径`WatcherSettings.json`
 
 ### 示例
 
-假设您的项目路径为 `C:\Projects\MyTerrariaMod`，并且您希望启用蛇形命名法和字段名称后缀，可以使用以下命令：
+假设您的项目路径为 `C:\Projects\MyTerrariaMod`请先编辑配置文件`WatcherSettings.json`,将`WorkPath`设置为`C:\Projects\MyTerrariaMod`然后运行命令
 
 ```shell
-TModWatcher SlnPath="C:\Projects\MyTerrariaMod" snake_case=true GenerateExtension=true
+TModWatcher SettingsPath=WatcherSettings.json
 ```
 
 ## 项目地址与支持
