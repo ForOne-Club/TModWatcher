@@ -13,9 +13,9 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Include="..\TModWatcher\TrifingZW.snk">
-        <Link>TrifingZW.snk</Link>
-      </None>
+        <None Include="..\TModWatcher\TrifingZW.snk">
+            <Link>TrifingZW.snk</Link>
+        </None>
     </ItemGroup>
 
 </Project>

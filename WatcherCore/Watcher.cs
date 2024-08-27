@@ -1,45 +1,37 @@
 ﻿using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 namespace WatcherCore;
 
-[SuppressMessage("ReSharper", "BitwiseOperatorOnEnumWithoutFlags")]
-public class Watcher(string filePath, bool snakeCase, bool generateExtension)
+public class Watcher(WatcherSettings watcherSettings)
 {
-    public readonly List<string> FileTypes =
-        [".png", ".jpg", ".webp", ".bmp", ".gif", ".mp3", ".wav", ".ogg", ".flac", ".xnb", ".json"];
-
-    public readonly List<string> IgnoreFolders =
-        [".git", "bin", "obj", ".idea", "Properties", "Localization", "Resource"];
-
-    public static readonly string ShaderCompile = "ShaderCompile/ShaderCompile.exe";
-
     private FileSystemWatcher _fileSystemWatcher;
     private TreeItem _root;
 
-    public string FilePath { get; } = filePath;
-    public string AssemblyName { get; private set; }
-
+    public WatcherSettings WatcherSettings { get; set; } = watcherSettings;
+    public string WorkPath => WatcherSettings.WorkPath;
+    public string AssemblyName => _root.FileName;
     public StringBuilder Code { get; } = new();
 
+    /// <summary>
+    ///     启动Watcher
+    /// </summary>
     public void Start()
     {
         _root = new()
         {
-            FileName = Path.GetFileName(FilePath),
-            FilePath = FilePath,
+            FileName = Path.GetFileName(WorkPath),
+            FilePath = WorkPath,
             Directory = true
         };
-        AssemblyName = _root.FileName;
 
         Console.WriteLine("\n开始进行编译着色器......");
-        CompileShader(FilePath);
+        CompileAllShader(WorkPath);
         Console.WriteLine("全部着色器编译完毕\n");
-        LoadTree(FilePath, _root);
+        LoadFileTree(WorkPath, _root);
         GenerateCode();
 
-        if (FilePath != null) _fileSystemWatcher = new(FilePath);
+        if (WorkPath != null) _fileSystemWatcher = new(WorkPath);
         _fileSystemWatcher.Created += FileSystemWatcher;
         _fileSystemWatcher.Deleted += FileSystemWatcher;
         _fileSystemWatcher.Renamed += FileSystemWatcher;
@@ -49,68 +41,82 @@ public class Watcher(string filePath, bool snakeCase, bool generateExtension)
         _fileSystemWatcher.EnableRaisingEvents = true;
     }
 
-    public void Stop()
-    {
-    }
-
+    /// <summary>
+    ///     生成C#代码
+    /// </summary>
     private void GenerateCode()
     {
         Code.Clear();
         Code.Append("using System.Diagnostics.CodeAnalysis;\n\n\n");
         Code.Append($"namespace {_root.FileName}.Resource;\n\n");
         Code.Append("[SuppressMessage(\"ReSharper\", \"InconsistentNaming\")]\n");
-        Code.Append(new GenerateCode(_root, AssemblyName, snakeCase, generateExtension).Generate());
-        var folderPath = Path.Combine(FilePath, "Resource");
-        if (Directory.Exists(folderPath))
-            Directory.Delete(folderPath, true);
-        Directory.CreateDirectory(folderPath);
-        FileStream fileStream = File.Create(Path.Combine(folderPath, "R.cs"));
+        Code.Append(new GenerateCode(_root, AssemblyName, WatcherSettings.SnakeCase, WatcherSettings.GenerateExtension).Generate());
+        var file = Path.Combine(WorkPath, WatcherSettings.ResourcePath);
+        Console.WriteLine(file);
+        if (Path.GetDirectoryName(file) is { } directory)
+            Directory.CreateDirectory(directory);
+        FileStream fileStream = File.Create(file);
         using StreamWriter writer = new(fileStream);
-        writer.Write(Code); 
+        writer.Write(Code);
     }
 
-    private void LoadTree(string path, TreeItem treeItem)
+    /// <summary>
+    ///     读取文件树
+    /// </summary>
+    /// <param name="directoryPath">文件夹路径</param>
+    /// <param name="treeItem">TreeItem</param>
+    private void LoadFileTree(string directoryPath, TreeItem treeItem)
     {
-        foreach (var file in Directory.GetFiles(path))
+        foreach (var filePath in Directory.GetFiles(directoryPath))
         {
-            if (!FileTypes.Contains(Path.GetExtension(file))) continue;
-            var relativePath = Path.GetRelativePath(FilePath, file);
-            treeItem.CreateChild(Path.GetFileNameWithoutExtension(file), file, relativePath, false);
+            if (!WatcherSettings.FileTypes.Contains(Path.GetExtension(filePath))) continue;
+            var relativePath = Path.GetRelativePath(WorkPath, filePath);
+            treeItem.CreateChild(Path.GetFileNameWithoutExtension(filePath), filePath, relativePath, false);
         }
 
-        foreach (var directory in Directory.GetDirectories(path))
+        foreach (var directory in Directory.GetDirectories(directoryPath))
         {
-            var relativePath = Path.GetRelativePath(FilePath, directory);
-            if (IgnoreFolders.Contains(relativePath)) continue;
+            var relativePath = Path.GetRelativePath(WorkPath, directory);
+            if (WatcherSettings.IgnoreFolders.Contains(relativePath)) continue;
             TreeItem dirTreeItem = treeItem.CreateChild(Path.GetFileName(directory), directory, relativePath);
-            LoadTree(directory, dirTreeItem);
+            LoadFileTree(directory, dirTreeItem);
         }
     }
 
-    private void CompileShader(string path)
+    /// <summary>
+    ///     编译文件夹内所有着色器
+    /// </summary>
+    /// <param name="directoryPath">文件夹路径</param>
+    private void CompileAllShader(string directoryPath)
     {
-        foreach (var file in Directory.GetFiles(path))
-            if (Path.GetExtension(file) == ".fx")
-                CompileFx(file);
+        if (WatcherSettings.IgnoreFolders.Contains(Path.GetFileName(directoryPath))) return;
 
-        foreach (var directory in Directory.GetDirectories(path))
-            CompileShader(directory);
+        foreach (var file in Directory.GetFiles(directoryPath))
+            if (Path.GetExtension(file) == ".fx")
+                CompileShader(file);
+
+        foreach (var directory in Directory.GetDirectories(directoryPath))
+            CompileAllShader(directory);
     }
 
-    private void CompileFx(string path)
+    /// <summary>
+    ///     编译单个着色器
+    /// </summary>
+    /// <param name="filePath">fx文件路径</param>
+    private void CompileShader(string filePath)
     {
         // 创建一个新的进程启动信息
         ProcessStartInfo processStartInfo = new()
         {
-            FileName = ShaderCompile, // 替换为你要调用的外部工具路径
-            Arguments = $"\"{path}\"", // 替换为要传入的参数
+            FileName = WatcherSettings.ShaderCompile, // 替换为你要调用的外部工具路径
+            Arguments = $"\"{filePath}\"" // 替换为要传入的参数
         };
 
         // 启动进程
         Console.ForegroundColor = ConsoleColor.Yellow;
         Console.Write("[编译着色器]  ");
         Console.ForegroundColor = ConsoleColor.Magenta;
-        Console.Write(Path.GetRelativePath(FilePath, path));
+        Console.Write(Path.GetRelativePath(WorkPath, filePath));
 
         using Process process = Process.Start(processStartInfo);
         if (process == null)
@@ -142,12 +148,12 @@ public class Watcher(string filePath, bool snakeCase, bool generateExtension)
         _lastEventInfo = eventInfo;
 
         //忽略文件夹
-        if (IgnoreFolders
-            .Select(ignoreFolder => Path.Combine(FilePath, ignoreFolder))
+        if (WatcherSettings.IgnoreFolders
+            .Select(ignoreFolder => Path.Combine(WorkPath, ignoreFolder))
             .Any(folderToIgnore => e.FullPath.StartsWith(folderToIgnore, StringComparison.OrdinalIgnoreCase)))
             return;
 
-        var relativePath = Path.GetRelativePath(FilePath, e.FullPath);
+        var relativePath = Path.GetRelativePath(WorkPath, e.FullPath);
 
         if (e.ChangeType == WatcherChangeTypes.Changed)
         {
@@ -161,21 +167,21 @@ public class Watcher(string filePath, bool snakeCase, bool generateExtension)
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine("开始重新编译着色器......");
             //编译着色器
-            CompileFx(e.FullPath);
+            CompileShader(e.FullPath);
             Console.WriteLine();
             return;
         }
 
         //编译着色器
         if (e.FullPath.EndsWith(".fx"))
-            CompileFx(e.FullPath);
+            CompileShader(e.FullPath);
 
         //忽略文件类型
-        if (!FileTypes.Contains(Path.GetExtension(e.FullPath))) return;
+        if (!WatcherSettings.FileTypes.Contains(Path.GetExtension(e.FullPath))) return;
 
         //重新监测并生成代码
         _root.CleanChild();
-        LoadTree(FilePath, _root);
+        LoadFileTree(WorkPath, _root);
         GenerateCode();
 
         // 打印监测信息

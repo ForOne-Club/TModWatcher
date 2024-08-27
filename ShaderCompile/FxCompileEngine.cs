@@ -7,7 +7,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace ShaderCompile;
 
-public class CompileEngine(string fxFilePath)
+public class FxCompileEngine(string fxFilePath)
 {
     public void Compile()
     {

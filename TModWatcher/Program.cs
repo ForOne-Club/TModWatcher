@@ -4,14 +4,18 @@ namespace TModWatcher;
 
 public class Program
 {
-    public static string WorkPath { get; private set; }
-    public static bool SnakeCase { get; private set; } = true;
-    public static bool GenerateExtension { get; private set; } = true;
-
+    /// <summary>
+    ///     主程序入口
+    /// </summary>
+    /// <param name="args">命令参数</param>
     public static void Main(string[] args)
     {
+        PrintTModWatcherWelcome();
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.WriteLine("\n输入指令Exit退出程序");
+        
+        //获取命令参数
         Dictionary<string, string> arguments = [];
-
         foreach (var arg in args)
         {
             var parts = arg.Split('=');
@@ -19,28 +23,17 @@ public class Program
                 arguments[parts[0]] = parts[1];
         }
 
-        WorkPath = arguments.TryGetValue("SlnPath", out var path) ? path : AppDomain.CurrentDomain.BaseDirectory.TrimEnd('\\');
-
-#if DEBUG
-        WorkPath = @"C:\Users\TrifingZW\Documents\My Games\Terraria\tModLoader\ModSources\TerrariaModFolder-main";
-#endif
-
-        if (arguments.TryGetValue("snake_case", out var snakeCase))
-            SnakeCase = snakeCase == "true";
-
-        if (arguments.TryGetValue("GenerateExtension", out var generateExtension))
-            GenerateExtension = generateExtension == "true";
-
-        PrintTModWatcherWelcome();
-        Console.ForegroundColor = ConsoleColor.Green;
-        Console.WriteLine("\n输入指令Exit退出程序");
+        //创建运行配置
+        var settingsPath = arguments.GetValueOrDefault("SettingsPath", "WatcherSettings.json");
+        WatcherSettings watcherSettings = WatcherSettings.Load(settingsPath);
 
         Console.ForegroundColor = ConsoleColor.Yellow;
         Console.WriteLine("\n正在启动监听程序......");
 
-        if (HasCsprojOrSlnFile(WorkPath))
+        //启动监听程序
+        if (HasCsprojOrSlnFile(watcherSettings.WorkPath))
         {
-            Watcher watcher = new(WorkPath, SnakeCase, GenerateExtension);
+            Watcher watcher = new(watcherSettings);
             Task task = Task.Run(watcher.Start);
 
             task.ContinueWith(t =>
@@ -51,14 +44,15 @@ public class Program
             }, TaskContinuationOptions.OnlyOnFaulted);
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine("监听程序启动成功！");
-            Console.WriteLine($"正在监听项目:{WorkPath}");
+            Console.WriteLine($"正在监听项目:{watcherSettings.WorkPath}");
         }
         else
         {
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($"\n{WorkPath}\n工作目录不是一个有效目录！并没有找到解决方案！");
+            Console.WriteLine($"\n{watcherSettings.WorkPath}\n工作目录不是一个有效目录！并没有找到解决方案！");
         }
 
+        //保持主线程运行，输入exit退出
         string command;
         do
         {
@@ -66,6 +60,9 @@ public class Program
         } while (command != "exit");
     }
 
+    /// <summary>
+    ///     打印 TModWatcher 欢迎信息
+    /// </summary>
     private static void PrintTModWatcherWelcome()
     {
         Console.ForegroundColor = ConsoleColor.Yellow;
@@ -117,9 +114,14 @@ public class Program
         Console.ForegroundColor = ConsoleColor.Red;
         Console.Write("MIT开源协议");
         Console.ResetColor();
-        Console.WriteLine("，请自觉遵守协议规则。");
+        Console.Write("，请自觉遵守协议规则。");
     }
 
+    /// <summary>
+    ///     判断指定目录下是否存在 .csproj 或 .sln 文件
+    /// </summary>
+    /// <param name="directoryPath">文件夹路径</param>
+    /// <returns>文件夹是否存在 .csproj 或 .sln 文件布尔值</returns>
     public static bool HasCsprojOrSlnFile(string directoryPath)
     {
         if (string.IsNullOrEmpty(directoryPath) || !Directory.Exists(directoryPath))

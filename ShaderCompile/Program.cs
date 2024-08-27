@@ -6,9 +6,8 @@ public class Program
     {
         foreach (var arg in args)
         {
-            CompileEngine compileEngine = new(arg);
-            compileEngine.Compile();
+            FxCompileEngine fxCompileEngine = new(arg);
+            fxCompileEngine.Compile();
         }
-        
     }
 }

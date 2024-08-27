@@ -18,7 +18,7 @@ public class GenerateCode(TreeItem treeItem, string assemblyName, bool snakeCase
     }
 
     private void GenerateClass(ref ClassDeclarationSyntax parent, TreeItem parentItem)
-    {   
+    {
         if (parentItem.Directory)
         {
             if (!parentItem.HasFile()) return;
