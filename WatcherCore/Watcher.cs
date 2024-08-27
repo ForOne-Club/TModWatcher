@@ -52,7 +52,6 @@ public class Watcher(WatcherSettings watcherSettings)
         Code.Append("[SuppressMessage(\"ReSharper\", \"InconsistentNaming\")]\n");
         Code.Append(new GenerateCode(_root, AssemblyName, WatcherSettings.SnakeCase, WatcherSettings.GenerateExtension).Generate());
         var file = Path.Combine(WorkPath, WatcherSettings.ResourcePath);
-        Console.WriteLine(file);
         if (Path.GetDirectoryName(file) is { } directory)
             Directory.CreateDirectory(directory);
         FileStream fileStream = File.Create(file);
