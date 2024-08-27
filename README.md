@@ -50,7 +50,7 @@
 
 ### 示例
 
-假设您的项目路径为 `C:\Projects\MyTerrariaMod`请先编辑配置文件`WatcherSettings.json`,将`WorkPath`设置为`C:\Projects\MyTerrariaMod`然后运行命令
+假设您的项目路径为 `C:\Projects\MyTerrariaMod` 请先编辑配置文件 `WatcherSettings.json` ,将 `WorkPath` 设置为 `C:\Projects\MyTerrariaMod` 然后运行命令
 
 ```shell
 TModWatcher SettingsPath=WatcherSettings.json
