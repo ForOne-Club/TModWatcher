@@ -56,8 +56,7 @@ public class GenerateCode(TreeItem treeItem, string assemblyName, bool snakeCase
             // 创建 FieldDeclarationSyntax
             FieldDeclarationSyntax fieldDeclaration = SyntaxFactory.FieldDeclaration(variableDeclaration).AddModifiers(
                 SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                SyntaxFactory.Token(SyntaxKind.StaticKeyword),
-                SyntaxFactory.Token(SyntaxKind.ReadOnlyKeyword));
+                SyntaxFactory.Token(SyntaxKind.ConstKeyword));
 
             //更新
             parent = parent.AddMembers(fieldDeclaration);
