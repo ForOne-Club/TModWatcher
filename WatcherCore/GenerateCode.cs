@@ -1,4 +1,5 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using System.Text.RegularExpressions;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -81,6 +82,9 @@ public class GenerateCode(TreeItem treeItem, string assemblyName, bool snakeCase
                 result += "_";
             result += processedExtension;
         }
+
+        // 将非字母数字字符替换为下划线
+        result = Regex.Replace(result, @"[^\w\d\u4e00-\u9fa5]", "_");
 
         // 处理 C# 关键字冲突 (添加前缀)
         if (IsCSharpKeyword(result))

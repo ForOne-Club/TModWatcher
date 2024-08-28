@@ -13,7 +13,7 @@ public class Program
         PrintTModWatcherWelcome();
         Console.ForegroundColor = ConsoleColor.Green;
         Console.WriteLine("\n输入指令Exit退出程序");
-        
+
         //获取命令参数
         Dictionary<string, string> arguments = [];
         foreach (var arg in args)

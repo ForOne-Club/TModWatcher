@@ -9,7 +9,10 @@ public class WatcherSettings
     public bool SnakeCase { get; set; } = true;
     public bool GenerateExtension { get; set; } = true;
     public string ResourcePath { get; set; } = "Resource/R.cs";
-    public List<string> FileTypes { get; set; } = [".png", ".jpg", ".webp", ".bmp", ".gif", ".mp3", ".wav", ".ogg", ".flac", ".xnb"];
+
+    public List<string> FileFilters { get; set; } =
+        [".png", ".jpg", ".webp", ".bmp", ".gif", ".mp3", ".wav", ".ogg", ".flac", ".xnb"];
+
     public List<string> IgnoreFolders { get; set; } = [".git", ".idea", ".vs", "bin", "obj", "Properties", "Localization", "Resource"];
 
     public void Save(string path)
