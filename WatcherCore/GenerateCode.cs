@@ -5,14 +5,15 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace WatcherCore;
 
-public class GenerateCode(TreeItem treeItem, string assemblyName, bool snakeCase = true, bool generateExtension = true)
+public class GenerateCode(TreeItem treeItem, string assemblyName, string resourceName, bool snakeCase = true, bool generateExtension = true)
 {
     public string Generate()
     {
         //声明静态类声明
-        ClassDeclarationSyntax classDeclaration = SyntaxFactory.ClassDeclaration("R").AddModifiers(
-            SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-            SyntaxFactory.Token(SyntaxKind.StaticKeyword));
+        ClassDeclarationSyntax classDeclaration = SyntaxFactory.ClassDeclaration(Path.GetFileNameWithoutExtension(resourceName) ?? "R")
+            .AddModifiers(
+                SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                SyntaxFactory.Token(SyntaxKind.StaticKeyword));
 
         GenerateClass(ref classDeclaration, treeItem);
         return classDeclaration.NormalizeWhitespace().ToFullString();

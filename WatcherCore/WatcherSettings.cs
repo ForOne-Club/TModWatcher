@@ -8,7 +8,8 @@ public class WatcherSettings
     public string ShaderCompile { get; set; } = "ShaderCompile/ShaderCompile.exe";
     public bool SnakeCase { get; set; } = true;
     public bool GenerateExtension { get; set; } = true;
-    public string ResourcePath { get; set; } = "Resource/R.cs";
+    public string ResourcePath { get; set; } = string.Empty;
+    public string ResourceName { get; set; } = "R.cs";
 
     public List<string> FileFilters { get; set; } =
         [".png", ".jpg", ".webp", ".bmp", ".gif", ".mp3", ".wav", ".ogg", ".flac", ".xnb"];

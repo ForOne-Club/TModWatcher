@@ -19,7 +19,7 @@ public class Watcher(WatcherSettings watcherSettings)
     {
         _root = new()
         {
-            FileName = Path.GetFileName(WorkPath),
+            FileName = $"{Path.GetFileName(WorkPath)}Refer",
             FilePath = WorkPath,
             Directory = true
         };
@@ -59,12 +59,15 @@ public class Watcher(WatcherSettings watcherSettings)
     /// </summary>
     private void GenerateCode()
     {
+        if (WorkPath == null) return;
         Code.Clear();
         Code.Append("using System.Diagnostics.CodeAnalysis;\n\n\n");
-        Code.Append($"namespace {_root.FileName}.Resource;\n\n");
+        var ten = WatcherSettings.ResourcePath == string.Empty ? string.Empty : ".";
+        Code.Append($"namespace {Path.GetFileName(WorkPath)}{ten}{WatcherSettings.ResourcePath.Replace("/", ".")};\n\n");
         Code.Append("[SuppressMessage(\"ReSharper\", \"InconsistentNaming\")]\n");
-        Code.Append(new GenerateCode(_root, AssemblyName, WatcherSettings.SnakeCase, WatcherSettings.GenerateExtension).Generate());
-        var file = Path.Combine(WorkPath, WatcherSettings.ResourcePath);
+        Code.Append(new GenerateCode(_root, AssemblyName, WatcherSettings.ResourceName, WatcherSettings.SnakeCase,
+            WatcherSettings.GenerateExtension).Generate());
+        var file = Path.Combine(WorkPath, WatcherSettings.ResourcePath, WatcherSettings.ResourceName);
         if (Path.GetDirectoryName(file) is { } directory)
             Directory.CreateDirectory(directory);
         FileStream fileStream = File.Create(file);
