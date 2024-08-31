@@ -3,13 +3,13 @@ using System.Text;
 
 namespace WatcherCore;
 
-public class Watcher(WatcherSettings watcherSettings)
+public class Watcher(string assemblyName, WatcherSettings watcherSettings)
 {
     private TreeItem _root;
 
     public WatcherSettings WatcherSettings { get; set; } = watcherSettings;
     public string WorkPath => WatcherSettings.WorkPath;
-    public string AssemblyName => _root.FileName;
+    public string AssemblyName => assemblyName;
     public StringBuilder Code { get; } = new();
 
     /// <summary>
@@ -19,7 +19,7 @@ public class Watcher(WatcherSettings watcherSettings)
     {
         _root = new()
         {
-            FileName = $"{Path.GetFileName(WorkPath)}Refer",
+            FileName = Path.GetFileName(WorkPath),
             FilePath = WorkPath,
             Directory = true
         };
@@ -65,7 +65,7 @@ public class Watcher(WatcherSettings watcherSettings)
         var ten = WatcherSettings.ResourcePath == string.Empty ? string.Empty : ".";
         Code.Append($"namespace {Path.GetFileName(WorkPath)}{ten}{WatcherSettings.ResourcePath.Replace("/", ".")};\n\n");
         Code.Append("[SuppressMessage(\"ReSharper\", \"InconsistentNaming\")]\n");
-        Code.Append(new GenerateCode(_root, AssemblyName, WatcherSettings.ResourceName, WatcherSettings.SnakeCase,
+        Code.Append(new GenerateCode(_root, AssemblyName, WatcherSettings.ResourceName, WatcherSettings.NestedClass, WatcherSettings.SnakeCase,
             WatcherSettings.GenerateExtension).Generate());
         var file = Path.Combine(WorkPath, WatcherSettings.ResourcePath, WatcherSettings.ResourceName);
         if (Path.GetDirectoryName(file) is { } directory)

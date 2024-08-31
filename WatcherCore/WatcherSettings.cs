@@ -6,6 +6,7 @@ public class WatcherSettings
 {
     public string WorkPath { get; set; } = AppDomain.CurrentDomain.BaseDirectory.TrimEnd('\\');
     public string ShaderCompile { get; set; } = "ShaderCompile/ShaderCompile.exe";
+    public bool NestedClass { get; set; }
     public bool SnakeCase { get; set; } = true;
     public bool GenerateExtension { get; set; } = true;
     public string ResourcePath { get; set; } = string.Empty;

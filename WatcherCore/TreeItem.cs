@@ -8,6 +8,7 @@ public class TreeItem
     public string FilePath { get; init; }
     public string RelativePath { get; private init; }
     public bool Directory { get; init; }
+    public TreeItem Parent { get; private set; }
     public int ChildCount => TreeItems.Count;
 
     public TreeItem CreateChild(string name, string path, string relativePath, bool directory = true)
@@ -17,7 +18,8 @@ public class TreeItem
             FileName = name,
             FilePath = path,
             RelativePath = relativePath,
-            Directory = directory
+            Directory = directory,
+            Parent = this
         };
         TreeItems.Add(treeItem);
         return treeItem;

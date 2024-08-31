@@ -5,7 +5,13 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace WatcherCore;
 
-public class GenerateCode(TreeItem treeItem, string assemblyName, string resourceName, bool snakeCase = true, bool generateExtension = true)
+public class GenerateCode(
+    TreeItem treeItem,
+    string assemblyName,
+    string resourceName,
+    bool nestedClass,
+    bool snakeCase = true,
+    bool generateExtension = true)
 {
     public string Generate()
     {
@@ -15,11 +21,60 @@ public class GenerateCode(TreeItem treeItem, string assemblyName, string resourc
                 SyntaxFactory.Token(SyntaxKind.PublicKeyword),
                 SyntaxFactory.Token(SyntaxKind.StaticKeyword));
 
-        GenerateClass(ref classDeclaration, treeItem);
+
+        if (nestedClass)
+            GenerateTreeClass(ref classDeclaration, treeItem);
+        else
+            GenerateClass(ref classDeclaration, treeItem);
         return classDeclaration.NormalizeWhitespace().ToFullString();
     }
 
     private void GenerateClass(ref ClassDeclarationSyntax parent, TreeItem parentItem)
+    {
+        if (parentItem.Directory)
+        {
+            if (!parentItem.HasFile()) return;
+
+            //遍历
+            foreach (TreeItem item in parentItem.TreeItems)
+                GenerateClass(ref parent, item);
+        }
+        else
+        {
+            var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(parentItem.RelativePath);
+            // 拼接目录路径和去掉扩展名的文件名
+            var directoryPath = Path.GetDirectoryName(parentItem.RelativePath);
+            if (directoryPath == null || fileNameWithoutExtension == null) return;
+            var resultPath = Path.Combine(directoryPath, fileNameWithoutExtension);
+
+            var fieldName = GetCSharpFieldName(parentItem.FilePath);
+            if (parent.Members
+                .OfType<FieldDeclarationSyntax>()
+                .SelectMany(f => f.Declaration.Variables)
+                .Any(v => v.Identifier.Text == "myField"))
+                fieldName += $"{parentItem.Parent.FileName}{fieldName}";
+
+            // 指定 string 类型
+            PredefinedTypeSyntax type = SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.StringKeyword));
+            // 指定变量名称并设置初始值
+            VariableDeclaratorSyntax variableDeclarator = SyntaxFactory
+                .VariableDeclarator(SyntaxFactory.Identifier(fieldName))
+                .WithInitializer(SyntaxFactory.EqualsValueClause(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression,
+                    SyntaxFactory.Literal($"{assemblyName}/{resultPath.Replace("\\", "/")}"))));
+            // 创建 VariableDeclarationSyntax
+            VariableDeclarationSyntax variableDeclaration = SyntaxFactory.VariableDeclaration(type)
+                .WithVariables(SyntaxFactory.SingletonSeparatedList(variableDeclarator));
+            // 创建 FieldDeclarationSyntax
+            FieldDeclarationSyntax fieldDeclaration = SyntaxFactory.FieldDeclaration(variableDeclaration).AddModifiers(
+                SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                SyntaxFactory.Token(SyntaxKind.ConstKeyword));
+
+            //更新
+            parent = parent.AddMembers(fieldDeclaration);
+        }
+    }
+
+    private void GenerateTreeClass(ref ClassDeclarationSyntax parent, TreeItem parentItem)
     {
         if (parentItem.Directory)
         {
@@ -32,7 +87,7 @@ public class GenerateCode(TreeItem treeItem, string assemblyName, string resourc
 
             //遍历
             foreach (TreeItem item in parentItem.TreeItems)
-                GenerateClass(ref classDeclaration, item);
+                GenerateTreeClass(ref classDeclaration, item);
 
             //添加并更新Parent
             parent = parent.AddMembers(classDeclaration);

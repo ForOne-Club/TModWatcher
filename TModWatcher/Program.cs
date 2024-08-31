@@ -31,9 +31,9 @@ public class Program
         Console.WriteLine("\n正在启动监听程序......");
 
         //启动监听程序
-        if (HasCsprojOrSlnFile(watcherSettings.WorkPath))
+        if (HasCsprojOrSlnFile(watcherSettings.WorkPath, out var assemblyName))
         {
-            Watcher watcher = new(watcherSettings);
+            Watcher watcher = new(assemblyName, watcherSettings);
             Task task = Task.Run(watcher.Start);
 
             task.ContinueWith(t =>
@@ -121,18 +121,23 @@ public class Program
     ///     判断指定目录下是否存在 .csproj 或 .sln 文件
     /// </summary>
     /// <param name="directoryPath">文件夹路径</param>
+    /// <param name="assemblyName">程序集名称</param>
     /// <returns>文件夹是否存在 .csproj 或 .sln 文件布尔值</returns>
-    public static bool HasCsprojOrSlnFile(string directoryPath)
+    public static bool HasCsprojOrSlnFile(string directoryPath, out string assemblyName)
     {
         if (string.IsNullOrEmpty(directoryPath) || !Directory.Exists(directoryPath))
+        {
+            assemblyName = null;
             return false;
+        }
 
         // 获取文件夹中的所有文件
         var files = Directory.GetFiles(directoryPath);
 
-        // 遍历文件，查找 .csproj 或 .sln 文件
-        return files.Any(file =>
+        assemblyName = files.FirstOrDefault(file =>
             Path.GetExtension(file).Equals(".csproj", StringComparison.OrdinalIgnoreCase) ||
             Path.GetExtension(file).Equals(".sln", StringComparison.OrdinalIgnoreCase));
+
+        return assemblyName != null;
     }
 }
