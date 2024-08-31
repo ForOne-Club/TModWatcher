@@ -123,7 +123,7 @@ public class Program
     /// <param name="directoryPath">文件夹路径</param>
     /// <param name="assemblyName">程序集名称</param>
     /// <returns>文件夹是否存在 .csproj 或 .sln 文件布尔值</returns>
-    public static bool HasCsprojOrSlnFile(string directoryPath, out string assemblyName)
+    private static bool HasCsprojOrSlnFile(string directoryPath, out string assemblyName)
     {
         if (string.IsNullOrEmpty(directoryPath) || !Directory.Exists(directoryPath))
         {
@@ -131,13 +131,18 @@ public class Program
             return false;
         }
 
-        // 获取文件夹中的所有文件
-        var files = Directory.GetFiles(directoryPath);
+        // 使用延迟执行来获取文件夹中的所有文件，提高性能
+        var file = Directory.EnumerateFiles(directoryPath)
+            .FirstOrDefault(file => 
+            {
+                var extension = Path.GetExtension(file);
+                return extension.Equals(".csproj", StringComparison.OrdinalIgnoreCase) ||
+                       extension.Equals(".sln", StringComparison.OrdinalIgnoreCase);
+            });
 
-        assemblyName = files.FirstOrDefault(file =>
-            Path.GetExtension(file).Equals(".csproj", StringComparison.OrdinalIgnoreCase) ||
-            Path.GetExtension(file).Equals(".sln", StringComparison.OrdinalIgnoreCase));
+        assemblyName = file != null ? Path.GetFileNameWithoutExtension(file) : null;
 
         return assemblyName != null;
     }
+
 }

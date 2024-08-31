@@ -9,7 +9,7 @@ public class GenerateCode(
     TreeItem treeItem,
     string assemblyName,
     string resourceName,
-    bool nestedClass,
+    bool nestedClass = true,
     bool snakeCase = true,
     bool generateExtension = true)
 {
