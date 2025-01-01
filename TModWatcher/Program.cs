@@ -2,7 +2,7 @@
 
 namespace TModWatcher;
 
-public class Program
+public static class Program
 {
     /// <summary>
     ///     主程序入口
@@ -31,17 +31,20 @@ public class Program
         Console.WriteLine("\n正在启动监听程序......");
 
         //启动监听程序
-        if (HasCsprojOrSlnFile(watcherSettings.WorkPath, out var assemblyName))
+        if (HasCsprojOrSlnFile(watcherSettings.WorkPath, out var assemblyName) && assemblyName != null)
         {
             Watcher watcher = new(assemblyName, watcherSettings);
             Task task = Task.Run(watcher.Start);
 
-            task.ContinueWith(t =>
-            {
-                if (!t.IsFaulted) return;
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine(t.Exception);
-            }, TaskContinuationOptions.OnlyOnFaulted);
+            task.ContinueWith(
+                t =>
+                {
+                    if (!t.IsFaulted) return;
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine(t.Exception);
+                },
+                TaskContinuationOptions.OnlyOnFaulted
+            );
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine("监听程序启动成功！");
             Console.WriteLine($"正在监听项目:{watcherSettings.WorkPath}");
@@ -53,11 +56,9 @@ public class Program
         }
 
         //保持主线程运行，输入exit退出
-        string command;
-        do
-        {
-            command = Console.ReadLine();
-        } while (command != "exit");
+        string? command;
+        do command = Console.ReadLine();
+        while (command != "exit");
     }
 
     /// <summary>
@@ -123,7 +124,7 @@ public class Program
     /// <param name="directoryPath">文件夹路径</param>
     /// <param name="assemblyName">程序集名称</param>
     /// <returns>文件夹是否存在 .csproj 或 .sln 文件布尔值</returns>
-    private static bool HasCsprojOrSlnFile(string directoryPath, out string assemblyName)
+    private static bool HasCsprojOrSlnFile(string directoryPath, out string? assemblyName)
     {
         if (string.IsNullOrEmpty(directoryPath) || !Directory.Exists(directoryPath))
         {
@@ -133,16 +134,18 @@ public class Program
 
         // 使用延迟执行来获取文件夹中的所有文件，提高性能
         var file = Directory.EnumerateFiles(directoryPath)
-            .FirstOrDefault(file => 
-            {
-                var extension = Path.GetExtension(file);
-                return extension.Equals(".csproj", StringComparison.OrdinalIgnoreCase) ||
-                       extension.Equals(".sln", StringComparison.OrdinalIgnoreCase);
-            });
+            .FirstOrDefault(
+                file =>
+                {
+                    var extension = Path.GetExtension(file);
+                    return extension.Equals(".csproj", StringComparison.OrdinalIgnoreCase)
+                           || extension.Equals(".sln", StringComparison.OrdinalIgnoreCase)
+                           || extension.Equals(".slnx", StringComparison.OrdinalIgnoreCase);
+                }
+            );
 
         assemblyName = file != null ? Path.GetFileNameWithoutExtension(file) : null;
 
         return assemblyName != null;
     }
-
 }

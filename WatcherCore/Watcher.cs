@@ -5,6 +5,7 @@ namespace WatcherCore;
 
 public class Watcher(string assemblyName, WatcherSettings watcherSettings)
 {
+    private bool _compoleShader;
     private TreeItem _root;
 
     public WatcherSettings WatcherSettings => watcherSettings;
@@ -17,7 +18,9 @@ public class Watcher(string assemblyName, WatcherSettings watcherSettings)
     /// </summary>
     public void Start()
     {
-        _root = new()
+        if (WorkPath == string.Empty) return;
+
+        _root = new TreeItem
         {
             FileName = AssemblyName,
             FilePath = WorkPath,
@@ -29,8 +32,6 @@ public class Watcher(string assemblyName, WatcherSettings watcherSettings)
         Console.WriteLine("全部着色器编译完毕\n");
         LoadFileTree(WorkPath, _root);
         GenerateCode();
-
-        if (WorkPath == null) return;
 
         FileSystemWatcher fxFileSystemWatcher = new(WorkPath);
         fxFileSystemWatcher.Created += FileSystemWatcherOnFX;
@@ -59,14 +60,21 @@ public class Watcher(string assemblyName, WatcherSettings watcherSettings)
     /// </summary>
     private void GenerateCode()
     {
-        if (WorkPath == null) return;
         Code.Clear();
-        Code.Append("using System.Diagnostics.CodeAnalysis;\n\n\n");
+        Code.Append("using System.Diagnostics.CodeAnalysis;\n\n");
         var ten = WatcherSettings.ResourcePath == string.Empty ? string.Empty : ".";
         Code.Append($"namespace {AssemblyName}{ten}{WatcherSettings.ResourcePath.Replace("/", ".")};\n\n");
         Code.Append("[SuppressMessage(\"ReSharper\", \"InconsistentNaming\")]\n");
-        Code.Append(new GenerateCode(_root, AssemblyName, WatcherSettings.ResourceName, WatcherSettings.NestedClass, WatcherSettings.SnakeCase,
-            WatcherSettings.GenerateExtension).Generate());
+        Code.Append(
+            new GenerateCode(
+                _root,
+                AssemblyName,
+                WatcherSettings.ResourceName,
+                WatcherSettings.NestedClass,
+                WatcherSettings.SnakeCase,
+                WatcherSettings.GenerateExtension
+            ).Generate()
+        );
         var file = Path.Combine(WorkPath, WatcherSettings.ResourcePath, WatcherSettings.ResourceName);
         if (Path.GetDirectoryName(file) is { } directory)
             Directory.CreateDirectory(directory);
@@ -120,11 +128,19 @@ public class Watcher(string assemblyName, WatcherSettings watcherSettings)
     /// <param name="filePath">fx文件路径</param>
     private void CompileShader(string filePath)
     {
+        if (_compoleShader)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("着色器编译器正在运行中！");
+            return;
+        }
+
+        _compoleShader = true;
         // 创建一个新的进程启动信息
         ProcessStartInfo processStartInfo = new()
         {
-            FileName = WatcherSettings.ShaderCompile, // 替换为你要调用的外部工具路径
-            Arguments = $"\"{filePath}\"" // 替换为要传入的参数
+            FileName = WatcherSettings.ShaderCompile,
+            Arguments = $"\"{filePath}\""
         };
 
         // 启动进程
@@ -133,11 +149,11 @@ public class Watcher(string assemblyName, WatcherSettings watcherSettings)
         Console.ForegroundColor = ConsoleColor.Magenta;
         Console.Write(Path.GetRelativePath(WorkPath, filePath));
 
-        using Process process = Process.Start(processStartInfo);
-        if (process == null)
+        if (Process.Start(processStartInfo) is not { } process)
         {
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine("无法启动进程！");
+            _compoleShader = false;
             return;
         }
 
@@ -145,6 +161,7 @@ public class Watcher(string assemblyName, WatcherSettings watcherSettings)
         process.WaitForExit();
         Console.ForegroundColor = ConsoleColor.Green;
         Console.WriteLine("  ---编译完成");
+        _compoleShader = false;
     }
 
     #region Callback
@@ -154,6 +171,8 @@ public class Watcher(string assemblyName, WatcherSettings watcherSettings)
 
     private bool Repeat(FileSystemEventArgs e)
     {
+        if(_compoleShader) return true;
+        
         //防止抖动
         var eventInfo = e.FullPath;
         if (eventInfo == _lastEventInfo && (DateTime.Now - _lastEventTime).TotalMilliseconds < 500)
@@ -240,6 +259,12 @@ public class Watcher(string assemblyName, WatcherSettings watcherSettings)
                 Console.ForegroundColor = ConsoleColor.Blue;
                 Console.Write("\n[着色器代码更名]  ");
                 break;
+            case WatcherChangeTypes.Deleted:
+                break;
+            case WatcherChangeTypes.All:
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
         }
 
         //打印文件名称和时间

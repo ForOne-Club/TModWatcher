@@ -12,8 +12,7 @@ public class WatcherSettings
     public string ResourcePath { get; set; } = string.Empty;
     public string ResourceName { get; set; } = "R.cs";
 
-    public List<string> FileFilters { get; set; } =
-        [".png", ".jpg", ".webp", ".bmp", ".gif", ".mp3", ".wav", ".ogg", ".flac", ".xnb"];
+    public List<string> FileFilters { get; set; } = [".png", ".jpg", ".webp", ".bmp", ".gif", ".mp3", ".wav", ".ogg", ".flac", ".xnb"];
 
     public List<string> IgnoreFolders { get; set; } = [".git", ".idea", ".vs", "bin", "obj", "Properties", "Localization", "Resource"];
 
@@ -25,7 +24,6 @@ public class WatcherSettings
 
     public static WatcherSettings Load(string path)
     {
-        WatcherSettings watcherSettings = new();
         Console.WriteLine();
         Console.ForegroundColor = ConsoleColor.Green;
         Console.Write("[读取配置文件]  ");
@@ -34,10 +32,12 @@ public class WatcherSettings
         if (File.Exists(path))
             try
             {
-                watcherSettings = JsonSerializer.Deserialize(File.ReadAllText(path), SerializeOnlyContext.Default.WatcherSettings);
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine("  ---读取配置文件完成");
-                return watcherSettings;
+                if (JsonSerializer.Deserialize(File.ReadAllText(path), SerializeOnlyContext.Default.WatcherSettings) is { } w)
+                {
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine("  ---读取配置文件完成");
+                    return w;
+                }
             }
             catch (Exception ex)
             {
@@ -53,13 +53,14 @@ public class WatcherSettings
                 Console.WriteLine($"{ex.StackTrace}");
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine("将生成默认配置并使用");
-                return watcherSettings;
+                return new WatcherSettings();
             }
 
+        WatcherSettings watcherSettings = new();
         Console.ForegroundColor = ConsoleColor.Yellow;
         Console.WriteLine("  ---配置文件不存在");
         Console.ForegroundColor = ConsoleColor.Yellow;
-        Console.WriteLine("将生成默认配置并使用。");
+        Console.WriteLine("将生成默认配置并使用");
         watcherSettings.Save(path);
         return watcherSettings;
     }

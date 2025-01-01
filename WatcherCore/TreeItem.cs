@@ -4,11 +4,11 @@ public class TreeItem
 {
     public List<TreeItem> TreeItems { get; } = [];
 
-    public string FileName { get; init; }
-    public string FilePath { get; init; }
-    public string RelativePath { get; private init; }
+    public string FileName { get; init; } = string.Empty;
+    public string FilePath { get; init; } = string.Empty;
+    public string RelativePath { get; private init; } = string.Empty;
     public bool Directory { get; init; }
-    public TreeItem Parent { get; private set; }
+    public TreeItem? Parent { get; private set; }
     public int ChildCount => TreeItems.Count;
 
     public TreeItem CreateChild(string name, string path, string relativePath, bool directory = true)
@@ -43,12 +43,15 @@ public class TreeItem
     public bool HasFile()
     {
         var hasFile = false;
-        Ergodic(this, item =>
-        {
-            if (item.Directory) return false;
-            hasFile = true;
-            return true;
-        });
+        Ergodic(
+            this,
+            item =>
+            {
+                if (item.Directory) return false;
+                hasFile = true;
+                return true;
+            }
+        );
         return hasFile;
     }
 

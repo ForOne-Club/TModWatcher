@@ -1,11 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>disable</Nullable>
+        <TargetFramework>net9.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <LangVersion>13</LangVersion>
+        <IsPackable>false</IsPackable>
         <SignAssembly>true</SignAssembly>
+
         <AssemblyOriginatorKeyFile>..\TModWatcher\TrifingZW.snk</AssemblyOriginatorKeyFile>
+
+        <!-- 启用隐式使用指令 -->
+        <ImplicitUsings>enable</ImplicitUsings>
     </PropertyGroup>
 
     <ItemGroup>

@@ -5,22 +5,28 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace WatcherCore;
 
-public class GenerateCode(
+public partial class GenerateCode(
     TreeItem treeItem,
     string assemblyName,
     string resourceName,
     bool nestedClass = true,
     bool snakeCase = true,
-    bool generateExtension = true)
+    bool generateExtension = true
+)
 {
+    private string _resourceName = resourceName;
+
     public string Generate()
     {
+        if (_resourceName == string.Empty)
+            _resourceName = "R.cs";
+
         //声明静态类声明
-        ClassDeclarationSyntax classDeclaration = SyntaxFactory.ClassDeclaration(Path.GetFileNameWithoutExtension(resourceName) ?? "R")
+        ClassDeclarationSyntax classDeclaration = SyntaxFactory.ClassDeclaration(Path.GetFileNameWithoutExtension(_resourceName))
             .AddModifiers(
                 SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                SyntaxFactory.Token(SyntaxKind.StaticKeyword));
-
+                SyntaxFactory.Token(SyntaxKind.StaticKeyword)
+            );
 
         if (nestedClass)
             GenerateTreeClass(ref classDeclaration, treeItem);
@@ -44,7 +50,7 @@ public class GenerateCode(
             var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(parentItem.RelativePath);
             // 拼接目录路径和去掉扩展名的文件名
             var directoryPath = Path.GetDirectoryName(parentItem.RelativePath);
-            if (directoryPath == null || fileNameWithoutExtension == null) return;
+            if (directoryPath == null || fileNameWithoutExtension == string.Empty || parentItem.Parent == null) return;
             var resultPath = Path.Combine(directoryPath, fileNameWithoutExtension);
 
             var fieldName = GetCSharpFieldName(parentItem.FilePath);
@@ -59,15 +65,23 @@ public class GenerateCode(
             // 指定变量名称并设置初始值
             VariableDeclaratorSyntax variableDeclarator = SyntaxFactory
                 .VariableDeclarator(SyntaxFactory.Identifier(fieldName))
-                .WithInitializer(SyntaxFactory.EqualsValueClause(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression,
-                    SyntaxFactory.Literal($"{assemblyName}/{resultPath.Replace("\\", "/")}"))));
+                .WithInitializer(
+                    SyntaxFactory.EqualsValueClause(
+                        SyntaxFactory.LiteralExpression(
+                            SyntaxKind.StringLiteralExpression,
+                            SyntaxFactory.Literal($"{assemblyName}/{resultPath.Replace("\\", "/")}")
+                        )
+                    )
+                );
             // 创建 VariableDeclarationSyntax
             VariableDeclarationSyntax variableDeclaration = SyntaxFactory.VariableDeclaration(type)
                 .WithVariables(SyntaxFactory.SingletonSeparatedList(variableDeclarator));
             // 创建 FieldDeclarationSyntax
-            FieldDeclarationSyntax fieldDeclaration = SyntaxFactory.FieldDeclaration(variableDeclaration).AddModifiers(
-                SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                SyntaxFactory.Token(SyntaxKind.ConstKeyword));
+            FieldDeclarationSyntax fieldDeclaration = SyntaxFactory.FieldDeclaration(variableDeclaration)
+                .AddModifiers(
+                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                    SyntaxFactory.Token(SyntaxKind.ConstKeyword)
+                );
 
             //更新
             parent = parent.AddMembers(fieldDeclaration);
@@ -81,9 +95,11 @@ public class GenerateCode(
             if (!parentItem.HasFile()) return;
 
             //声明静态类声明
-            ClassDeclarationSyntax classDeclaration = SyntaxFactory.ClassDeclaration(parentItem.FileName).AddModifiers(
-                SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                SyntaxFactory.Token(SyntaxKind.StaticKeyword));
+            ClassDeclarationSyntax classDeclaration = SyntaxFactory.ClassDeclaration(parentItem.FileName)
+                .AddModifiers(
+                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                    SyntaxFactory.Token(SyntaxKind.StaticKeyword)
+                );
 
             //遍历
             foreach (TreeItem item in parentItem.TreeItems)
@@ -97,7 +113,7 @@ public class GenerateCode(
             var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(parentItem.RelativePath);
             // 拼接目录路径和去掉扩展名的文件名
             var directoryPath = Path.GetDirectoryName(parentItem.RelativePath);
-            if (directoryPath == null || fileNameWithoutExtension == null) return;
+            if (directoryPath == null || fileNameWithoutExtension == string.Empty) return;
             var resultPath = Path.Combine(directoryPath, fileNameWithoutExtension);
 
             // 指定 string 类型
@@ -105,15 +121,23 @@ public class GenerateCode(
             // 指定变量名称并设置初始值
             VariableDeclaratorSyntax variableDeclarator = SyntaxFactory
                 .VariableDeclarator(SyntaxFactory.Identifier(GetCSharpFieldName(parentItem.FilePath)))
-                .WithInitializer(SyntaxFactory.EqualsValueClause(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression,
-                    SyntaxFactory.Literal($"{assemblyName}/{resultPath.Replace("\\", "/")}"))));
+                .WithInitializer(
+                    SyntaxFactory.EqualsValueClause(
+                        SyntaxFactory.LiteralExpression(
+                            SyntaxKind.StringLiteralExpression,
+                            SyntaxFactory.Literal($"{assemblyName}/{resultPath.Replace("\\", "/")}")
+                        )
+                    )
+                );
             // 创建 VariableDeclarationSyntax
             VariableDeclarationSyntax variableDeclaration = SyntaxFactory.VariableDeclaration(type)
                 .WithVariables(SyntaxFactory.SingletonSeparatedList(variableDeclarator));
             // 创建 FieldDeclarationSyntax
-            FieldDeclarationSyntax fieldDeclaration = SyntaxFactory.FieldDeclaration(variableDeclaration).AddModifiers(
-                SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                SyntaxFactory.Token(SyntaxKind.ConstKeyword));
+            FieldDeclarationSyntax fieldDeclaration = SyntaxFactory.FieldDeclaration(variableDeclaration)
+                .AddModifiers(
+                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                    SyntaxFactory.Token(SyntaxKind.ConstKeyword)
+                );
 
             //更新
             parent = parent.AddMembers(fieldDeclaration);
@@ -140,7 +164,7 @@ public class GenerateCode(
         }
 
         // 将非字母数字字符替换为下划线
-        result = Regex.Replace(result, @"[^\w\d\u4e00-\u9fa5]", "_");
+        result = MyRegex().Replace(result, "_");
 
         // 处理 C# 关键字冲突 (添加前缀)
         if (IsCSharpKeyword(result))
@@ -180,4 +204,7 @@ public class GenerateCode(
         ];
         return keywords.Contains(text);
     }
+
+    [GeneratedRegex(@"[^\w\d\u4e00-\u9fa5]")]
+    private static partial Regex MyRegex();
 }
