@@ -33,7 +33,7 @@
 
 1. **前往[Releases](https://github.com/ForOne-Club/TModWatcher/releases)下载并解压 TModWatcher**
 2. **编辑配置文件**
-    - 在解压后的文件夹中找到 `WatcherSettings.json` 文件，编辑该文件以配置工具的行为
+    - 在解压后的文件夹中找到 `TModWatcher.exe` 文件，先运行一遍后会生成配置文件 `WatcherSettings.json`
     - `WorkPath`：指向 tModLoader 模组项目的解决方案路径
     - `ShaderCompile`：指向 FX 着色器编译器的路径，默认为 `ShaderCompile/ShaderCompile.exe`
     - `SnakeCase`：是否启用蛇形命名法，默认为 `true`
@@ -42,15 +42,15 @@
     - `ResourceName`：生成的C#资源引用静态类的类名称，默认为 `R.cs`
     - `FileTypes`：需要监控的文件类型，默认为 `[".png", ".jpg", ".webp", ".bmp", ".gif", ".mp3", ".wav", ".ogg", ".flac", ".xnb"]`
     - `IgnorePaths`：需要忽略的文件夹路径，默认为 `[".git", ".idea", ".vs", "bin", "obj", "Properties", "Localization", "Resource"]`
-3. **运行命令或者直接运行`.exe`文件**：
+3. **运行命令或者直接运行 `.exe` 文件**：
    ```shell
    TModWatcher SettingsPath=WatcherSettings.json
    ```
-    - `SettingsPath=path`：指向配置文件，默认为相对路径`WatcherSettings.json`
+    - `SettingsPath=path`：指向配置文件，默认为相对路径 `WatcherSettings.json`
 
 ### 示例
 
-1. **打开配置文件**
+1. **打开配置文件（第一次需要先运行一遍 `TModWatcher.exe` 生成配置文件）**
    ![演示图片](DemoImages/DirectoryScreenshot.png)
 2. **编辑配置文件**
    ![演示图片](DemoImages/ConfigurationScreenshot.png)
