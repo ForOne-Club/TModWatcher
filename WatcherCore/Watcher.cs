@@ -5,8 +5,10 @@ namespace WatcherCore;
 
 public class Watcher(string assemblyName, WatcherSettings watcherSettings)
 {
-    private bool _compoleShader;
-    private TreeItem _root;
+    private bool _compileShader;
+    private TreeItem _root = null!;
+
+    public Process? TmlProcess { get; set; }
 
     public WatcherSettings WatcherSettings => watcherSettings;
     public string AssemblyName => assemblyName;
@@ -42,10 +44,11 @@ public class Watcher(string assemblyName, WatcherSettings watcherSettings)
         fxFileSystemWatcher.IncludeSubdirectories = true;
         fxFileSystemWatcher.EnableRaisingEvents = true;
 
-        foreach (var fileType in WatcherSettings.FileFilters)
+        foreach (string fileType in WatcherSettings.FileFilters)
         {
             FileSystemWatcher normalFileSystemWatcher = new(WorkPath);
             normalFileSystemWatcher.Created += FileSystemWatcherOnNormal;
+            normalFileSystemWatcher.Changed += FileSystemWatcherOnNormal;
             normalFileSystemWatcher.Deleted += FileSystemWatcherOnNormal;
             normalFileSystemWatcher.Renamed += FileSystemWatcherOnNormal;
             normalFileSystemWatcher.Error += FileSystemWatcherOnError;
@@ -62,7 +65,7 @@ public class Watcher(string assemblyName, WatcherSettings watcherSettings)
     {
         Code.Clear();
         Code.Append("using System.Diagnostics.CodeAnalysis;\n\n");
-        var ten = WatcherSettings.ResourcePath == string.Empty ? string.Empty : ".";
+        string ten = WatcherSettings.ResourcePath == string.Empty ? string.Empty : ".";
         Code.Append($"namespace {AssemblyName}{ten}{WatcherSettings.ResourcePath.Replace("/", ".")};\n\n");
         Code.Append("[SuppressMessage(\"ReSharper\", \"InconsistentNaming\")]\n");
         Code.Append(
@@ -75,7 +78,7 @@ public class Watcher(string assemblyName, WatcherSettings watcherSettings)
                 WatcherSettings.GenerateExtension
             ).Generate()
         );
-        var file = Path.Combine(WorkPath, WatcherSettings.ResourcePath, WatcherSettings.ResourceName);
+        string file = Path.Combine(WorkPath, WatcherSettings.ResourcePath, WatcherSettings.ResourceName);
         if (Path.GetDirectoryName(file) is { } directory)
             Directory.CreateDirectory(directory);
         FileStream fileStream = File.Create(file);
@@ -90,16 +93,16 @@ public class Watcher(string assemblyName, WatcherSettings watcherSettings)
     /// <param name="treeItem">TreeItem</param>
     private void LoadFileTree(string directoryPath, TreeItem treeItem)
     {
-        foreach (var filePath in Directory.GetFiles(directoryPath))
+        foreach (string filePath in Directory.GetFiles(directoryPath))
         {
             if (!WatcherSettings.FileFilters.Contains(Path.GetExtension(filePath))) continue;
-            var relativePath = Path.GetRelativePath(WorkPath, filePath);
+            string relativePath = Path.GetRelativePath(WorkPath, filePath);
             treeItem.CreateChild(Path.GetFileNameWithoutExtension(filePath), filePath, relativePath, false);
         }
 
-        foreach (var directory in Directory.GetDirectories(directoryPath))
+        foreach (string directory in Directory.GetDirectories(directoryPath))
         {
-            var relativePath = Path.GetRelativePath(WorkPath, directory);
+            string relativePath = Path.GetRelativePath(WorkPath, directory);
             if (WatcherSettings.IgnoreFolders.Contains(relativePath)) continue;
             TreeItem dirTreeItem = treeItem.CreateChild(Path.GetFileName(directory), directory, relativePath);
             LoadFileTree(directory, dirTreeItem);
@@ -114,11 +117,11 @@ public class Watcher(string assemblyName, WatcherSettings watcherSettings)
     {
         if (WatcherSettings.IgnoreFolders.Contains(Path.GetFileName(directoryPath))) return;
 
-        foreach (var file in Directory.GetFiles(directoryPath))
+        foreach (string file in Directory.GetFiles(directoryPath))
             if (Path.GetExtension(file) == ".fx")
                 CompileShader(file);
 
-        foreach (var directory in Directory.GetDirectories(directoryPath))
+        foreach (string directory in Directory.GetDirectories(directoryPath))
             CompileAllShader(directory);
     }
 
@@ -128,14 +131,14 @@ public class Watcher(string assemblyName, WatcherSettings watcherSettings)
     /// <param name="filePath">fx文件路径</param>
     private void CompileShader(string filePath)
     {
-        if (_compoleShader)
+        if (_compileShader)
         {
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine("着色器编译器正在运行中！");
             return;
         }
 
-        _compoleShader = true;
+        _compileShader = true;
         // 创建一个新的进程启动信息
         ProcessStartInfo processStartInfo = new()
         {
@@ -153,7 +156,7 @@ public class Watcher(string assemblyName, WatcherSettings watcherSettings)
         {
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine("无法启动进程！");
-            _compoleShader = false;
+            _compileShader = false;
             return;
         }
 
@@ -161,20 +164,20 @@ public class Watcher(string assemblyName, WatcherSettings watcherSettings)
         process.WaitForExit();
         Console.ForegroundColor = ConsoleColor.Green;
         Console.WriteLine("  ---编译完成");
-        _compoleShader = false;
+        _compileShader = false;
     }
 
     #region Callback
 
     private static DateTime _lastEventTime;
-    private static string _lastEventInfo;
+    private static string _lastEventInfo = null!;
 
     private bool Repeat(FileSystemEventArgs e)
     {
-        if(_compoleShader) return true;
-        
+        if (_compileShader) return true;
+
         //防止抖动
-        var eventInfo = e.FullPath;
+        string eventInfo = e.FullPath;
         if (eventInfo == _lastEventInfo && (DateTime.Now - _lastEventTime).TotalMilliseconds < 500)
             return true;
         _lastEventTime = DateTime.Now;
@@ -190,7 +193,7 @@ public class Watcher(string assemblyName, WatcherSettings watcherSettings)
     {
         if (Repeat(e)) return;
 
-        var relativePath = Path.GetRelativePath(WorkPath, e.FullPath);
+        string relativePath = Path.GetRelativePath(WorkPath, e.FullPath);
 
         // 打印监测信息
         switch (e.ChangeType)
@@ -219,9 +222,26 @@ public class Watcher(string assemblyName, WatcherSettings watcherSettings)
                 Console.ForegroundColor = ConsoleColor.White;
                 Console.WriteLine($"  {DateTime.Now}");
                 break;
-            case WatcherChangeTypes.All:
-                break;
             case WatcherChangeTypes.Changed:
+                Console.ForegroundColor = ConsoleColor.Blue;
+                Console.Write("[文件修改]  ");
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.Write(relativePath);
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine($"  {DateTime.Now}");
+                if (TmlProcess != null)
+                {
+                    var texturePath =
+                        $"{Path.GetDirectoryName(Path.GetRelativePath(AssemblyName, relativePath))}\\{Path.GetFileNameWithoutExtension(relativePath)}";
+                    var command =
+                        $"UpdateModTexture ModName={AssemblyName} TextureName={texturePath} TexturePath={e.FullPath}";
+                    TmlProcess.StandardInput.WriteLine(command);
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine($"已提交资源热重载命令:{command}");
+                }
+                break;
+            case WatcherChangeTypes.All:
+                Console.Write("[都]  ");
                 break;
             default:
                 Console.ForegroundColor = ConsoleColor.Red;
@@ -243,7 +263,7 @@ public class Watcher(string assemblyName, WatcherSettings watcherSettings)
     {
         if (Repeat(e)) return;
 
-        var relativePath = Path.GetRelativePath(WorkPath, e.FullPath);
+        string relativePath = Path.GetRelativePath(WorkPath, e.FullPath);
 
         switch (e.ChangeType)
         {

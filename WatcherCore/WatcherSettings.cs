@@ -18,7 +18,7 @@ public class WatcherSettings
 
     public void Save(string path)
     {
-        var jsonString = JsonSerializer.Serialize(this, SerializeOnlyContext.Default.WatcherSettings);
+        string? jsonString = JsonSerializer.Serialize(this, SerializeOnlyContext.Default.WatcherSettings);
         File.WriteAllText(path, jsonString);
     }
 

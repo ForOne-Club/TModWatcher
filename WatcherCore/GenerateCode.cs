@@ -47,13 +47,13 @@ public partial class GenerateCode(
         }
         else
         {
-            var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(parentItem.RelativePath);
+            string? fileNameWithoutExtension = Path.GetFileNameWithoutExtension(parentItem.RelativePath);
             // 拼接目录路径和去掉扩展名的文件名
-            var directoryPath = Path.GetDirectoryName(parentItem.RelativePath);
+            string? directoryPath = Path.GetDirectoryName(parentItem.RelativePath);
             if (directoryPath == null || fileNameWithoutExtension == string.Empty || parentItem.Parent == null) return;
-            var resultPath = Path.Combine(directoryPath, fileNameWithoutExtension);
+            string? resultPath = Path.Combine(directoryPath, fileNameWithoutExtension);
 
-            var fieldName = GetCSharpFieldName(parentItem.FilePath);
+            string? fieldName = GetCSharpFieldName(parentItem.FilePath);
             if (parent.Members
                 .OfType<FieldDeclarationSyntax>()
                 .SelectMany(f => f.Declaration.Variables)
@@ -110,11 +110,11 @@ public partial class GenerateCode(
         }
         else
         {
-            var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(parentItem.RelativePath);
+            string? fileNameWithoutExtension = Path.GetFileNameWithoutExtension(parentItem.RelativePath);
             // 拼接目录路径和去掉扩展名的文件名
-            var directoryPath = Path.GetDirectoryName(parentItem.RelativePath);
+            string? directoryPath = Path.GetDirectoryName(parentItem.RelativePath);
             if (directoryPath == null || fileNameWithoutExtension == string.Empty) return;
-            var resultPath = Path.Combine(directoryPath, fileNameWithoutExtension);
+            string? resultPath = Path.Combine(directoryPath, fileNameWithoutExtension);
 
             // 指定 string 类型
             PredefinedTypeSyntax type = SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.StringKeyword));
@@ -147,15 +147,15 @@ public partial class GenerateCode(
     private string GetCSharpFieldName(string path)
     {
         // 获取文件名和扩展名
-        var fileName = Path.GetFileNameWithoutExtension(path);
-        var extension = Path.GetExtension(path);
+        string? fileName = Path.GetFileNameWithoutExtension(path);
+        string? extension = Path.GetExtension(path);
 
         // 处理文件名和扩展名
-        var processedFileName = CapitalizeFirstLetter(fileName);
-        var processedExtension = CapitalizeFirstLetter(extension.Replace(".", ""));
+        string? processedFileName = CapitalizeFirstLetter(fileName);
+        string? processedExtension = CapitalizeFirstLetter(extension.Replace(".", ""));
 
         // 合并文件名和扩展名
-        var result = processedFileName;
+        string? result = processedFileName;
         if (generateExtension)
         {
             if (snakeCase)
@@ -182,7 +182,7 @@ public partial class GenerateCode(
         if (string.IsNullOrEmpty(text))
             return text;
 
-        var firstChar = text[0];
+        char firstChar = text[0];
 
         if (char.IsLetter(firstChar))
             return char.ToUpper(firstChar) + text[1..];

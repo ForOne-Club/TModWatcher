@@ -1,9 +1,15 @@
-﻿using WatcherCore;
+﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Management;
+using WatcherCore;
 
 namespace TModWatcher;
 
 public static class Program
 {
+    public static readonly List<int> ProcessIds = [];
+    public static Watcher Watcher { get; private set; } = null!;
+
     /// <summary>
     ///     主程序入口
     /// </summary>
@@ -16,25 +22,30 @@ public static class Program
 
         //获取命令参数
         Dictionary<string, string> arguments = [];
-        foreach (var arg in args)
+        foreach (string arg in args)
         {
-            var parts = arg.Split('=');
+            string[] parts = arg.Split('=');
             if (parts.Length == 2)
                 arguments[parts[0]] = parts[1];
         }
 
         //创建运行配置
-        var settingsPath = arguments.GetValueOrDefault("SettingsPath", "WatcherSettings.json");
+        string settingsPath = arguments.GetValueOrDefault("SettingsPath", "WatcherSettings.json");
         WatcherSettings watcherSettings = WatcherSettings.Load(settingsPath);
 
+        //启动监听程序
         Console.ForegroundColor = ConsoleColor.Yellow;
         Console.WriteLine("\n正在启动监听程序......");
-
-        //启动监听程序
-        if (HasCsprojOrSlnFile(watcherSettings.WorkPath, out var assemblyName) && assemblyName != null)
+        if (HasCsprojOrSlnFile(watcherSettings.WorkPath, out string? assemblyName) && assemblyName != null)
         {
-            Watcher watcher = new(assemblyName, watcherSettings);
-            Task task = Task.Run(watcher.Start);
+            Watcher = new Watcher(assemblyName, watcherSettings);
+
+            // 查找 TML 进程
+            DetectTModLoader();
+            // 启用 TML 监听程序
+            WatcherTModLoader();
+
+            Task task = Task.Run(Watcher.Start);
 
             task.ContinueWith(
                 t =>
@@ -59,6 +70,102 @@ public static class Program
         string? command;
         do command = Console.ReadLine();
         while (command != "exit");
+    }
+
+    private static void DetectTModLoader()
+    {
+        const string targetExecutablePath = @"D:\SteamLibrary\steamapps\common\tModLoader\dotnet\dotnet.exe";
+
+        foreach (Process process in Process.GetProcesses())
+        {
+            try
+            {
+                // 获取进程的完整路径
+                string? processPath = process.MainModule?.FileName;
+                if (!string.Equals(processPath, targetExecutablePath, StringComparison.OrdinalIgnoreCase)) continue;
+                Console.WriteLine($"找到 tModLoader 进程: {process.ProcessName}, 进程ID: {process.Id}");
+                Watcher.TmlProcess = process;
+            }
+            catch (Exception e)
+            {
+                // Console.WriteLine($"无法访问进程 {process.ProcessName} 的信息");
+            }
+        }
+
+        if (Watcher.TmlProcess != null) return;
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.WriteLine("未找到 tModLoader 进程");
+        Console.ResetColor();
+    }
+
+    [SuppressMessage("Interoperability", "CA1416:验证平台兼容性")]
+    private static void WatcherTModLoader()
+    {
+        const string targetProcessPath = @"D:\SteamLibrary\steamapps\common\tModLoader\dotnet\dotnet.exe";
+
+        // 监听进程启动事件
+        var processStartQuery = new WqlEventQuery(
+            $"SELECT * FROM __InstanceCreationEvent WITHIN 1 WHERE TargetInstance ISA 'Win32_Process' AND TargetInstance.ExecutablePath = '{targetProcessPath.Replace(@"\", @"\\")}'"
+        );
+        var watcherStart = new ManagementEventWatcher(processStartQuery);
+        watcherStart.EventArrived += (sender, e) =>
+        {
+            // 获取启动的进程信息
+            var targetInstance = (ManagementBaseObject)e.NewEvent["TargetInstance"];
+            var processId = Convert.ToInt32(targetInstance["ProcessId"]);
+            ProcessIds.Add(processId);
+            UpdateTModLoaderProcess();
+        };
+
+        // 监听进程退出事件
+        var processExitQuery = new WqlEventQuery(
+            $"SELECT * FROM __InstanceDeletionEvent WITHIN 1 WHERE TargetInstance ISA 'Win32_Process' AND TargetInstance.ExecutablePath = '{targetProcessPath.Replace(@"\", @"\\")}'"
+        );
+        var watcherExit = new ManagementEventWatcher(processExitQuery);
+        watcherExit.EventArrived += (sender, e) =>
+        {
+            // 获取启动的进程信息
+            var targetInstance = (ManagementBaseObject)e.NewEvent["TargetInstance"];
+            var processId = Convert.ToInt32(targetInstance["ProcessId"]);
+            ProcessIds.Remove(processId);
+            UpdateTModLoaderProcess();
+        };
+
+        // 启动监听
+        watcherStart.Start();
+        watcherExit.Start();
+    }
+
+    private static void UpdateTModLoaderProcess()
+    {
+        if (ProcessIds.FirstOrDefault() is var processId and > 0)
+        {
+            if (Watcher.TmlProcess != null && Watcher.TmlProcess.Id == processId) return;
+            var process = Process.GetProcessById(processId);
+            Watcher.TmlProcess = process;
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("成功更新 tModLoader 进程");
+            Console.WriteLine($"进程名: {process.ProcessName}");
+            Console.WriteLine($"进程ID: {process.Id}");
+            Console.WriteLine($"进程启动时间: {process.StartTime}");
+            
+            var attacher = new ConsoleAttacher(17064);
+            // 尝试附加到目标进程的控制台
+            if (attacher.Attach())
+            {
+                // 完成后，记得释放附加的控制台
+                attacher.Detach();
+            }
+        }
+        else
+        {
+            Watcher.TmlProcess = null;
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("tModLoader 进程已关闭");
+        }
+
+        Console.WriteLine();
+        Console.ResetColor();
     }
 
     /// <summary>
@@ -133,11 +240,11 @@ public static class Program
         }
 
         // 使用延迟执行来获取文件夹中的所有文件，提高性能
-        var file = Directory.EnumerateFiles(directoryPath)
+        string? file = Directory.EnumerateFiles(directoryPath)
             .FirstOrDefault(
                 file =>
                 {
-                    var extension = Path.GetExtension(file);
+                    string extension = Path.GetExtension(file);
                     return extension.Equals(".csproj", StringComparison.OrdinalIgnoreCase)
                            || extension.Equals(".sln", StringComparison.OrdinalIgnoreCase)
                            || extension.Equals(".slnx", StringComparison.OrdinalIgnoreCase);
