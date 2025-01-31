@@ -1,14 +1,18 @@
-﻿using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-using System.Management;
-using WatcherCore;
+﻿using WatcherCore;
 
 namespace TModWatcher;
 
-public static class Program
+public static class ModWatcher
 {
     public static readonly List<int> ProcessIds = [];
     public static Watcher Watcher { get; private set; } = null!;
+
+    public static string PipeServerName { get; } = "TModWatcherPipeServer";
+    public static string PipeClientName { get; } = "TModWatcherPipeCommand";
+    public static PipeOutputMonitor PipeOutputMonitor { get; } = new(PipeServerName);
+    public static PipeCommandMonitor PipeCommandMonitor { get; } = new(PipeClientName);
+    public static readonly CancellationTokenSource ServerTokenSource = new();
+    public static readonly CancellationTokenSource ClientTokenSource = new();
 
     /// <summary>
     ///     主程序入口
@@ -39,12 +43,6 @@ public static class Program
         if (HasCsprojOrSlnFile(watcherSettings.WorkPath, out string? assemblyName) && assemblyName != null)
         {
             Watcher = new Watcher(assemblyName, watcherSettings);
-
-            // 查找 TML 进程
-            DetectTModLoader();
-            // 启用 TML 监听程序
-            WatcherTModLoader();
-
             Task task = Task.Run(Watcher.Start);
 
             task.ContinueWith(
@@ -65,107 +63,21 @@ public static class Program
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine($"\n{watcherSettings.WorkPath}\n工作目录不是一个有效目录！并没有找到解决方案！");
         }
+        
+        //启动管道服务
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.WriteLine("\n正在启动管道服务......");
+        PipeOutputMonitor.Start(ServerTokenSource.Token);
+        var memoryStream = new MemoryStream();
+        Watcher.CommandWriter = new StreamWriter(memoryStream) { AutoFlush = true };
+        PipeCommandMonitor.Start(ClientTokenSource.Token, memoryStream);
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.WriteLine("管道服务启动成功！");
 
         //保持主线程运行，输入exit退出
         string? command;
         do command = Console.ReadLine();
         while (command != "exit");
-    }
-
-    private static void DetectTModLoader()
-    {
-        const string targetExecutablePath = @"D:\SteamLibrary\steamapps\common\tModLoader\dotnet\dotnet.exe";
-
-        foreach (Process process in Process.GetProcesses())
-        {
-            try
-            {
-                // 获取进程的完整路径
-                string? processPath = process.MainModule?.FileName;
-                if (!string.Equals(processPath, targetExecutablePath, StringComparison.OrdinalIgnoreCase)) continue;
-                Console.WriteLine($"找到 tModLoader 进程: {process.ProcessName}, 进程ID: {process.Id}");
-                Watcher.TmlProcess = process;
-            }
-            catch (Exception e)
-            {
-                // Console.WriteLine($"无法访问进程 {process.ProcessName} 的信息");
-            }
-        }
-
-        if (Watcher.TmlProcess != null) return;
-        Console.ForegroundColor = ConsoleColor.Red;
-        Console.WriteLine("未找到 tModLoader 进程");
-        Console.ResetColor();
-    }
-
-    [SuppressMessage("Interoperability", "CA1416:验证平台兼容性")]
-    private static void WatcherTModLoader()
-    {
-        const string targetProcessPath = @"D:\SteamLibrary\steamapps\common\tModLoader\dotnet\dotnet.exe";
-
-        // 监听进程启动事件
-        var processStartQuery = new WqlEventQuery(
-            $"SELECT * FROM __InstanceCreationEvent WITHIN 1 WHERE TargetInstance ISA 'Win32_Process' AND TargetInstance.ExecutablePath = '{targetProcessPath.Replace(@"\", @"\\")}'"
-        );
-        var watcherStart = new ManagementEventWatcher(processStartQuery);
-        watcherStart.EventArrived += (sender, e) =>
-        {
-            // 获取启动的进程信息
-            var targetInstance = (ManagementBaseObject)e.NewEvent["TargetInstance"];
-            var processId = Convert.ToInt32(targetInstance["ProcessId"]);
-            ProcessIds.Add(processId);
-            UpdateTModLoaderProcess();
-        };
-
-        // 监听进程退出事件
-        var processExitQuery = new WqlEventQuery(
-            $"SELECT * FROM __InstanceDeletionEvent WITHIN 1 WHERE TargetInstance ISA 'Win32_Process' AND TargetInstance.ExecutablePath = '{targetProcessPath.Replace(@"\", @"\\")}'"
-        );
-        var watcherExit = new ManagementEventWatcher(processExitQuery);
-        watcherExit.EventArrived += (sender, e) =>
-        {
-            // 获取启动的进程信息
-            var targetInstance = (ManagementBaseObject)e.NewEvent["TargetInstance"];
-            var processId = Convert.ToInt32(targetInstance["ProcessId"]);
-            ProcessIds.Remove(processId);
-            UpdateTModLoaderProcess();
-        };
-
-        // 启动监听
-        watcherStart.Start();
-        watcherExit.Start();
-    }
-
-    private static void UpdateTModLoaderProcess()
-    {
-        if (ProcessIds.FirstOrDefault() is var processId and > 0)
-        {
-            if (Watcher.TmlProcess != null && Watcher.TmlProcess.Id == processId) return;
-            var process = Process.GetProcessById(processId);
-            Watcher.TmlProcess = process;
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("成功更新 tModLoader 进程");
-            Console.WriteLine($"进程名: {process.ProcessName}");
-            Console.WriteLine($"进程ID: {process.Id}");
-            Console.WriteLine($"进程启动时间: {process.StartTime}");
-            
-            var attacher = new ConsoleAttacher(17064);
-            // 尝试附加到目标进程的控制台
-            if (attacher.Attach())
-            {
-                // 完成后，记得释放附加的控制台
-                attacher.Detach();
-            }
-        }
-        else
-        {
-            Watcher.TmlProcess = null;
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine("tModLoader 进程已关闭");
-        }
-
-        Console.WriteLine();
-        Console.ResetColor();
     }
 
     /// <summary>

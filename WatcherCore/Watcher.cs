@@ -9,6 +9,7 @@ public class Watcher(string assemblyName, WatcherSettings watcherSettings)
     private TreeItem _root = null!;
 
     public Process? TmlProcess { get; set; }
+    public StreamWriter? CommandWriter { get; set; }
 
     public WatcherSettings WatcherSettings => watcherSettings;
     public string AssemblyName => assemblyName;
@@ -229,16 +230,17 @@ public class Watcher(string assemblyName, WatcherSettings watcherSettings)
                 Console.Write(relativePath);
                 Console.ForegroundColor = ConsoleColor.White;
                 Console.WriteLine($"  {DateTime.Now}");
-                if (TmlProcess != null)
+                if (CommandWriter != null)
                 {
                     var texturePath =
                         $"{Path.GetDirectoryName(Path.GetRelativePath(AssemblyName, relativePath))}\\{Path.GetFileNameWithoutExtension(relativePath)}";
                     var command =
-                        $"UpdateModTexture ModName={AssemblyName} TextureName={texturePath} TexturePath={e.FullPath}";
-                    TmlProcess.StandardInput.WriteLine(command);
+                        $"UpdateModTexture ModName={AssemblyName} TextureName={texturePath} TexturePath=E:\\ 奇美拉.png";
+                    CommandWriter.WriteLine(command);
                     Console.ForegroundColor = ConsoleColor.Green;
                     Console.WriteLine($"已提交资源热重载命令:{command}");
                 }
+
                 break;
             case WatcherChangeTypes.All:
                 Console.Write("[都]  ");

@@ -24,9 +24,4 @@
         <ProjectReference Include="..\WatcherCore\WatcherCore.csproj"/>
     </ItemGroup>
 
-
-    <ItemGroup>
-      <PackageReference Include="System.Management" Version="9.0.0" />
-    </ItemGroup>
-
 </Project>
